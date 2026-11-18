@@ -1,0 +1,16 @@
+:root {
+    font-family: system-ui, sans-serif;
+    color: #163b38;
+    background: #edf5f2;
+    line-height: 1.6;
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+.card { width: min(100%, 720px); background: white; padding: clamp(24px, 6vw, 56px); border: 1px solid #d5e6df; border-radius: 20px; }
+.eyebrow { font-size: .75rem; letter-spacing: .12em; font-weight: 700; color: #367568; }
+h1 { line-height: 1.15; font-size: clamp(2rem, 5vw, 3rem); margin: 16px 0; }
+h2 { font-size: 1.15rem; }
+.stack { display: flex; flex-wrap: wrap; list-style: none; padding: 0; gap: 8px; margin: 24px 0; }
+.stack li { background: #e7f3ec; padding: 5px 12px; border-radius: 24px; font-size: .875rem; }
+section { border-top: 1px solid #e1ebe6; margin-top: 28px; padding-top: 16px; }
+footer { margin-top: 32px; font-size: .8rem; color: #55706b; }
