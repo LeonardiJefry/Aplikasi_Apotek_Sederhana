@@ -1,0 +1,28 @@
+name: Laporan bug
+description: Laporkan masalah agar dapat direproduksi.
+title: "[Bug] "
+body:
+  - type: textarea
+    id: langkah
+    attributes:
+      label: Langkah reproduksi
+      description: Tuliskan urutan tindakan dan data dummy yang digunakan.
+    validations:
+      required: true
+  - type: textarea
+    id: harapan
+    attributes:
+      label: Hasil yang diharapkan
+    validations:
+      required: true
+  - type: textarea
+    id: aktual
+    attributes:
+      label: Hasil aktual
+    validations:
+      required: true
+  - type: textarea
+    id: lingkungan
+    attributes:
+      label: Lingkungan dan bukti
+      description: Versi Java, OS, browser, pesan error, dan screenshot yang relevan.

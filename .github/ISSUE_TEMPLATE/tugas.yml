@@ -1,0 +1,32 @@
+name: Tugas atau fitur
+description: Bagi pekerjaan menjadi tugas dengan PIC dan hasil yang jelas.
+title: "[Tugas] "
+body:
+  - type: textarea
+    id: tujuan
+    attributes:
+      label: Tujuan dan lingkup
+      description: Jelaskan apa yang dikerjakan dan referensi use case Modul 2.
+    validations:
+      required: true
+  - type: textarea
+    id: selesai
+    attributes:
+      label: Kriteria selesai
+      description: Hasil yang harus dapat diperiksa oleh reviewer.
+      value: |
+        - [ ] Implementasi sesuai rancangan
+        - [ ] Pengujian lulus
+        - [ ] Dokumentasi dan perubahan skema disertakan bila diperlukan
+    validations:
+      required: true
+  - type: input
+    id: pic
+    attributes:
+      label: PIC dan reviewer
+      description: Isi username GitHub setelah pembagian tugas disepakati.
+  - type: textarea
+    id: dependensi
+    attributes:
+      label: Ketergantungan dan koordinasi
+      description: Issue terkait, tabel bersama, atau kontrak endpoint.

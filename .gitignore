@@ -1,0 +1,26 @@
+# Maven
+target/
+
+# IDE dan konfigurasi lokal
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+.factorypath
+
+# Konfigurasi pribadi
+.env
+.env.*
+!.env.example
+!.env.*.example
+application-local.properties
+
+# Berkas sementara
+*.log
+*.tmp
+*.swp
+*~
+.DS_Store
+Thumbs.db
