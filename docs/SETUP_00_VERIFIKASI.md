@@ -2,7 +2,7 @@
 
 Tanggal: 26 November 2026 (WIB). PIC: Jefry (JL). Konteks skema awal: [Issue #3](https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana/issues/3).
 
-**Status: done.** Fondasi a90c2e2 sudah diintegrasikan ke main melalui [PR #6](https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana/pull/6), merge commit 2fe5510; status merged dikonfirmasi lewat GitHub. [PROGRESS.md](../PROGRESS.md) adalah sumber status aktif, kini UC-01. Verifikasi lokal fondasi: **46 tes lulus, 0 gagal/error/skipped**, termasuk regresi servlet HTTP, serta startup kedua berhasil. Runtime lokal JDK 24 dengan target kompilasi 21; CI memakai JDK 21.
+**Status: done.** Fondasi a90c2e2 sudah diintegrasikan ke main melalui [PR #6](https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana/pull/6), merge commit 2fe5510; status merged dikonfirmasi lewat GitHub. [PROGRESS.md](../PROGRESS.md) adalah sumber status tahap aktif. Verifikasi lokal fondasi: **46 tes lulus, 0 gagal/error/skipped**, termasuk regresi servlet HTTP, serta startup kedua berhasil. Runtime lokal JDK 24 dengan target kompilasi 21; CI memakai JDK 21.
 
 Permintaan menunggu integrasi SETUP-00 sebelum UC-01 sudah dipenuhi. Jefry melakukan commit/push/merge; agent baru melanjutkan UC-01 setelah memeriksa PR #6. Hasil sandbox pada bagian selanjutnya adalah riwayat, bukan status akhir fondasi. Roadmap tetap H2 sampai QA-01, lalu PostgreSQL Supabase pada DB-01.
 

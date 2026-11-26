@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Status Antrean')}"></head>
+<body class="queue-page"><header th:replace="~{fragments/layout :: header}"></header>
+<div class="app-shell">
+  <nav class="sidebar" aria-label="Menu pasien"><p class="eyebrow">PASIEN</p>
+    <a class="schedule-nav" th:href="@{/pasien}">Ringkasan</a>
+    <a class="nav-active" th:href="@{/pasien/antrean}" aria-current="page">Antrean saya</a>
+    <a class="schedule-nav" th:href="@{/pasien/jadwal}">Jadwal praktik</a>
+    <p class="help">Layanan lebih tertata, kunjungan lebih nyaman.</p>
+  </nav>
+  <main class="content schedule-content">
+    <p class="help">Antrean / Status antrean</p><h1>Status Antrean</h1>
+    <p class="muted">Pantau posisi antrean Anda dan perkembangan pelayanan di klinik.</p>
+    <div th:if="${pesanGalat != null}" class="alert danger" role="alert"><p th:text="${pesanGalat}"></p><a th:href="@{/pasien/antrean}">Kembali ke antrean saya</a></div>
+    <div th:if="${snapshot != null}" id="queue-workspace" th:with="d=${snapshot.dipilih}"
+         th:attr="data-api-url=${d == null} ? @{/pasien/antrean/data} : @{/pasien/antrean/{id}/data(id=${d.idAntrean})},data-ticket-id=${d == null ? '' : d.idAntrean},data-base-url=@{/pasien/antrean}">
+      <section th:if="${!#lists.isEmpty(snapshot.tiket)}" class="queue-picker">
+        <form method="get" th:action="@{/pasien/antrean}"><label for="queue-ticket">Tiket kunjungan Anda</label>
+          <select id="queue-ticket" name="tiket"><option th:each="p : ${snapshot.tiket}" th:value="${p.idAntrean}" th:text="${p.label()}" th:selected="${d != null and p.idAntrean == d.idAntrean}"></option></select>
+          <button class="outline" type="submit">Lihat Status</button>
+        </form>
+      </section>
+      <section th:if="${d == null}" class="card queue-empty"><h2>Belum ada tiket antrean</h2><p>Pilih jadwal praktik dan lakukan booking untuk mendapatkan nomor antrean.</p><a class="button primary" th:href="@{/pasien/jadwal}">Lihat Jadwal Praktik</a></section>
+      <div th:if="${d != null}">
+        <section class="card queue-summary" aria-label="Ringkasan status antrean">
+          <div><p class="queue-label">NOMOR ANTREAN ANDA</p><p class="queue-own-number" id="queue-own-number" th:text="${d.nomorTampilan()}"></p>
+            <span id="queue-status" class="badge" th:classappend="${d.statusAkhir ? 'queue-final' : (d.statusAntrean == 'Sedang Dilayani' ? 'queue-serving' : 'queue-waiting')}" th:text="${d.statusAntrean}"></span>
+          </div>
+          <div><p class="queue-label">NOMOR SEDANG DILAYANI</p><p class="queue-current-number" id="queue-current-number" th:text="${d.nomorSekarang()}"></p><p class="help">Pasien yang sedang berada di ruang periksa pada sesi ini</p></div>
+          <div><p class="queue-label">SISA ANTREAN SEBELUM GILIRAN ANDA</p><p class="queue-ahead" id="queue-ahead" th:text="${d.sisaTampilan()}"></p><p class="help">Menghitung tiket aktif dengan nomor lebih kecil pada sesi yang sama.</p></div>
+        </section>
+        <p id="queue-notice" class="schedule-info" th:text="${d.keterangan}"></p>
+        <div class="queue-columns">
+          <section class="card queue-detail" aria-labelledby="visit-heading"><h2 id="visit-heading">Detail Kunjungan</h2>
+            <dl class="booking-details"><dt>Poli</dt><dd id="queue-poli" th:text="${d.jadwal.poli}"></dd><dt>Dokter</dt><dd id="queue-doctor" th:text="${d.jadwal.dokter}"></dd>
+              <dt>Tanggal kunjungan</dt><dd id="queue-date" th:text="${d.jadwal.tanggal.toString()}"></dd><dt>Sesi / Jam</dt><dd id="queue-session" th:text="${d.jadwal.sesi + ' | ' + d.jadwal.jamMulai + '–' + d.jadwal.jamSelesai + ' WIB'}"></dd>
+              <dt>Lokasi</dt><dd>Klinik Leonardo</dd><dt>ID tiket</dt><dd id="queue-ticket-id" th:text="${d.idAntrean}"></dd></dl>
+          </section>
+          <section class="card queue-list" aria-labelledby="next-heading"><h2 id="next-heading">Daftar Antrean Berikutnya</h2>
+            <table aria-label="Nomor antrean aktif sesi ini"><thead><tr><th>Nomor antrean</th><th>Status</th><th>Estimasi</th></tr></thead>
+              <tbody id="queue-rows"><tr th:each="b : ${d.berikutnya}"><td th:text="${b.nomorTampilan()}"></td><td><span class="badge queue-waiting" th:text="${b.statusAntrean}"></span></td><td>—</td></tr></tbody>
+            </table>
+            <p id="queue-no-rows" class="help" th:hidden="${!#lists.isEmpty(d.berikutnya)}" th:text="${d.statusAkhir ? 'Pendaftaran ini telah berakhir.' : 'Belum ada antrean menunggu pada sesi ini.'}"></p>
+            <p class="help">Maksimal 5 nomor aktif menurut nomor urut, tanpa identitas pasien. Urutan panggilan mengikuti petugas; estimasi waktu belum tersedia.</p>
+          </section>
+        </div>
+        <div class="queue-actions">
+          <a id="queue-receipt" class="button outline" th:href="@{/pasien/booking/tiket/{id}(id=${d.idAntrean})}">Lihat Tiket Booking</a>
+          <a id="queue-checkin" class="button primary queue-action" th:href="${d.bolehCheckIn} ? @{/pasien/antrean/{id}/check-in(id=${d.idAntrean})} : null" th:attr="aria-disabled=${!d.bolehCheckIn},tabindex=${d.bolehCheckIn ? 0 : -1}">Check-in</a>
+          <a id="queue-cancel" class="button outline queue-action" th:href="${d.bolehBatal} ? @{/pasien/antrean/{id}/pembatalan(id=${d.idAntrean})} : null" th:attr="aria-disabled=${!d.bolehBatal},tabindex=${d.bolehBatal ? 0 : -1}">Batalkan Antrean</a>
+        </div>
+        <p class="help">Pembatalan memerlukan waktu lebih dari 60 menit sebelum praktik. Check-in tersedia pada hari kunjungan dari 30 menit sebelum mulai sampai jam selesai. Hubungi petugas loket untuk layanan ini.</p>
+      </div>
+      <div class="schedule-refresh"><p id="queue-refresh-state" class="help" role="status" aria-live="polite" th:text="${'Diperbarui ' + snapshot.diperbaruiPada + ' WIB'}"></p><button type="button" id="queue-refresh" class="outline" hidden>Perbarui sekarang</button></div>
+      <noscript><p class="alert">Muat ulang halaman untuk melihat status terbaru.</p></noscript>
+    </div>
+  </main>
+</div><footer th:replace="~{fragments/layout :: footer}"></footer><script th:src="@{/js/status-antrean.js}" defer></script></body></html>

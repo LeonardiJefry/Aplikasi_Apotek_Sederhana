@@ -76,6 +76,35 @@ footer { color:#6b7280; font-size:12px; text-align:center; padding:20px; border-
 .booking-number { font-size:64px; font-weight:600; color:var(--brand); margin:20px 0; line-height:1; }
 .booking-alternatives { margin-top:24px; }
 .booking-alternatives li { margin:12px 0; }
+/* UI-03, RSI frame 111:777: ringkasan tiga kolom, detail dan daftar nomor. */
+.queue-picker { margin-bottom:20px; }
+.queue-picker form { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+.queue-picker label { margin:0; font-size:12px; }
+.queue-picker select { max-width:100%; min-width:240px; flex:1; padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:white; font:inherit; font-size:12px; }
+.queue-summary { display:grid; grid-template-columns:1fr 1fr 1.2fr; margin:0; padding:24px; border-radius:12px; }
+.queue-summary > div { padding:0 24px; min-width:0; }
+.queue-summary > div:first-child { padding-left:0; }
+.queue-summary > div + div { border-left:1px solid var(--border); }
+.queue-label { color:var(--muted); font-size:12px; font-weight:500; margin:0 0 16px; }
+.queue-own-number { color:var(--brand); font-size:56px; font-weight:600; line-height:1.2; margin:12px 0 20px; }
+.queue-current-number { font-size:40px; font-weight:600; line-height:1.2; margin:20px 0; overflow-wrap:anywhere; }
+.queue-ahead { font-size:36px; font-weight:600; color:var(--brand); margin:20px 0; }
+.queue-waiting { color:#b54708; background:#fffaeb; }
+.queue-serving { color:var(--brand); background:var(--brand-soft); }
+.queue-final { color:var(--muted); background:#f3f4f6; }
+.queue-columns { display:grid; grid-template-columns:1fr 1.06fr; gap:24px; margin:24px 0; }
+.queue-columns .card { margin:0; padding:24px; border-radius:12px; min-width:0; }
+.queue-detail h2,.queue-list h2 { padding-bottom:16px; border-bottom:1px solid var(--border); }
+.queue-list table { width:100%; font-size:12px; border-collapse:collapse; text-align:left; margin-top:16px; }
+.queue-list th { background:#f3f4f6; font-weight:500; color:var(--muted); padding:10px 12px; }
+.queue-list td { padding:12px; border-bottom:1px solid var(--border); }
+.queue-list .badge { font-size:10px; padding:3px 8px; }
+.queue-actions { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:12px; }
+.queue-action[aria-disabled=true] { color:#6b7280; background:#f3f4f6; cursor:not-allowed; pointer-events:none; }
+.queue-page .schedule-refresh { margin-top:24px; }
+.queue-page [hidden] { display:none; }
+@media(max-width:1050px) { .queue-columns { grid-template-columns:1fr; } .queue-summary { grid-template-columns:1fr 1fr 1fr; } .queue-summary > div { padding:0 16px; } .queue-current-number { font-size:32px; } .queue-ahead { font-size:28px; } }
+@media(max-width:760px) { .queue-summary { grid-template-columns:1fr; gap:20px; } .queue-summary > div { padding:0; } .queue-summary > div + div { border-left:0; border-top:1px solid var(--border); padding-top:20px; } .queue-picker form { align-items:stretch; flex-direction:column; } .queue-picker select { min-width:0; width:100%; } .queue-list th,.queue-list td { padding:8px 4px; } .queue-actions { flex-direction:column; } }
 @media(max-width:1050px) { .booking-grid { grid-template-columns:1fr; } }
 @media(max-width:760px) { .booking-fields { grid-template-columns:1fr; } .booking-actions { align-items:stretch; flex-direction:column; } .booking-actions button,.booking-actions .button { width:100%; } }
 @media(max-width:1050px) { .schedule-filter form { grid-template-columns:1fr 1fr; } }

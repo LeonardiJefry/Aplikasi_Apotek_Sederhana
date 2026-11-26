@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments/layout :: head('Informasi Layanan Antrean')}"></head><body>
+<header th:replace="~{fragments/layout :: header}"></header><main class="content booking-ticket">
+  <a th:href="@{/pasien/antrean}">Kembali ke antrean saya</a><h1 th:text="${judul}"></h1>
+  <p th:if="${pesanGalat != null}" class="alert danger" role="alert" th:text="${pesanGalat}"></p>
+  <section th:if="${informasi != null}" class="card"><p th:text="${informasi}"></p><p class="help">Membuka halaman ini tidak mengubah pendaftaran Anda.</p></section>
+  <a th:if="${tiket != null}" class="button outline" th:href="@{/pasien/antrean/{id}(id=${tiket.idAntrean})}">Lihat Status Antrean</a>
+</main><footer th:replace="~{fragments/layout :: footer}"></footer></body></html>
