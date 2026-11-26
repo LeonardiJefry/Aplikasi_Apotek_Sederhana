@@ -108,11 +108,50 @@ def check_schedule(base, password):
     expect_status(request(browser, base, "/pasien/jadwal/data"), 400, "Missing schedule filters")
     expect_status(request(browser, base, "/pasien/jadwal/pilih?idJadwal=UNKNOWN"),
                   404, "Unknown schedule selection")
-    _, _, choice = expect_status(request(browser, base, "/pasien/jadwal/pilih?idJadwal=JDW-001"),
-                                 200, "Read-only selection")
-    assert "belum membuat pendaftaran antrean" in choice
-    assert date.group(1) in choice, "Selected visit date must use YYYY-MM-DD"
-    print("PASS UC-01: default filters, live snapshot, validation, privacy and read-only selection")
+    _, headers, _ = expect_status(request(browser, base, "/pasien/jadwal/pilih?idJadwal=JDW-001"),
+                                 302, "Schedule handoff to booking")
+    assert headers["Location"].endswith("/pasien/booking?idJadwal=JDW-001")
+    print("PASS UC-01: default filters, live snapshot, validation, privacy and booking handoff")
+
+
+def check_booking(base, password):
+    browser = client()
+    login(browser, base, "pasien2", password)
+    _, _, page = expect_status(request(browser, base, "/pasien/booking?idJadwal=JDW-003"),
+                               200, "Booking summary")
+    assert "Pasien Demo Dua" in page and "DEMO-RM-002" in page and "DEMO-RM-001" not in page
+    date = re.search(r'id="booking-tanggal"[^>]*value="([0-9-]+)"', page).group(1)
+    _, _, page = expect_status(request(browser, base, "/pasien/booking/konfirmasi?idJadwal=JDW-003"),
+                               200, "Final confirmation")
+    key = re.search(r'name="bookingToken"[^>]*value="([^"]+)"', page).group(1)
+    form = {"bookingToken": key, "_csrf": csrf(page), "idPasien": "PAS-001", "idJadwal": "JDW-004"}
+    _, headers, _ = expect_status(request(browser, base, "/pasien/booking/konfirmasi", form),
+                                  303, "Create booking")
+    location = headers["Location"]
+    path = urllib.parse.urlsplit(location).path
+    assert path.endswith("/pasien/booking/tiket/" + key)
+    _, _, ticket = expect_status(request(browser, base, path), 200, "Own booking ticket")
+    assert "Pasien Demo Dua" in ticket and "Terdaftar" in ticket and date in ticket
+    _, replay_headers, _ = expect_status(request(browser, base, "/pasien/booking/konfirmasi", form),
+                                         303, "Replay confirmation")
+    assert replay_headers["Location"] == location
+    query = urllib.parse.urlencode({"tanggal": date, "idPoli": "POL-001"})
+    _, _, body = expect_status(request(browser, base, "/pasien/jadwal/data?" + query), 200, "Quota after booking")
+    assert json.loads(body)["jadwal"][0]["sisaKuota"] == 8, "Booking/replay must consume one quota"
+    expect_status(request(browser, base, "/pasien/antrean/" + key), 200, "UC-03 status handoff")
+    other = client()
+    login(other, base, "pasien", password)
+    expect_status(request(other, base, path), 404, "Other patient cannot read ticket")
+    cancel = client()
+    login(cancel, base, "pasien2", password)
+    _, _, page = expect_status(request(cancel, base, "/pasien/booking/konfirmasi?idJadwal=JDW-003"),
+                               200, "Cancellation draft")
+    cancel_key = re.search(r'name="bookingToken"[^>]*value="([^"]+)"', page).group(1)
+    expect_status(request(cancel, base, "/pasien/booking/batal", {"bookingToken": cancel_key, "_csrf": csrf(page)}),
+                  303, "Cancel before confirmation")
+    _, _, body = expect_status(request(browser, base, "/pasien/jadwal/data?" + query), 200, "Quota after draft cancellation")
+    assert json.loads(body)["jadwal"][0]["sisaKuota"] == 8
+    print("PASS UC-02: summary, confirmation, owner identity, ticket, replay, quota, cancellation and privacy")
 
 
 def main():
@@ -155,6 +194,7 @@ def main():
                     time.sleep(0.5)
                 check_roles(base, password)
                 check_schedule(base, password)
+                check_booking(base, password)
                 print(f"PASS demo startup {run}: fresh working directory, H2, synthetic accounts")
             finally:
                 process.terminate()

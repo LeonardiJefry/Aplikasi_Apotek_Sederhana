@@ -31,7 +31,7 @@ Password demo lokal: `demo-klinik-2026`. Ini fixture publik sintetis. Untuk meng
 | `mysql` (opsional historis) | Membaca `.env` lama; tidak dibutuhkan dalam alur harian/CI |
 | Supabase | Belum diimplementasikan; DB-01 setelah QA-01 lulus dan masuk main |
 
-SETUP-00 sudah terintegrasi melalui PR #6. UC-01 menyediakan jadwal praktik dan sisa kuota pada `/pasien/jadwal`: login sebagai pasien, pilih tanggal serta poli/dokter, lalu Lihat Jadwal. Kuota diperbarui otomatis. Pilih Jadwal masih merupakan titik sambung baca-saja; booking nyata menunggu UC-02. UI-02 sampai UI-10 belum diimplementasikan. Lihat [PROGRESS.md](PROGRESS.md) untuk hasil verifikasi aktual, [SETUP.md](SETUP.md) untuk langkah lengkap, [roadmap](docs/PROJECT.md), [kontrak](docs/KONTRAK.md), serta [arsitektur BCE](docs/ARSITEKTUR.md).
+SETUP-00 dan UC-01 terintegrasi melalui PR #6 dan #7. UC-02 siap review: login sebagai pasien, buka `/pasien/jadwal`, pilih tanggal serta poli/dokter, lalu Pilih Jadwal untuk ringkasan dan konfirmasi booking. Tiket berstatus Terdaftar diterbitkan setelah penyimpanan berhasil; kuota diperbarui otomatis di daftar jadwal. Untuk percobaan di luar jam praktik, pilih besok dan Poli Umum. UI-03 sampai UI-10 menunggu tahap berikutnya. Lihat [PROGRESS.md](PROGRESS.md) untuk hasil verifikasi aktual, [SETUP.md](SETUP.md) untuk langkah lengkap, [roadmap](docs/PROJECT.md), [kontrak](docs/KONTRAK.md), serta [arsitektur BCE](docs/ARSITEKTUR.md).
 
 ## Pemeriksaan
 
@@ -40,10 +40,10 @@ SETUP-00 sudah terintegrasi melalui PR #6. UC-01 menyediakan jadwal praktik dan 
 python scripts/smoke_demo.py target/apotek-0.0.1-SNAPSHOT.jar
 ```
 
-`verify` menjalankan tes migrasi, constraint, login, peran, CSRF, kepemilikan serta profil demo/default, lalu membuat JAR. Skrip Python standar memulai JAR dari folder sementara tanpa `.env`, memeriksa enam akun sintetis, akses lintas peran, password salah, CSRF dan logout, kemudian mengulangi startup di JVM baru. CI menjalankan kedua perintah dengan JDK 21 tanpa service database. Skrip HTTP ini melengkapi pemeriksaan visual browser.
+`verify` menjalankan tes migrasi, constraint, login, peran, CSRF, kepemilikan, jadwal, booking, perebutan slot terakhir, submit ganda, rollback serta profil demo/default, lalu membuat JAR. Skrip Python standar memulai JAR dari folder sementara tanpa `.env`, memeriksa enam akun sintetis, akses lintas peran, password salah, CSRF, logout, jadwal dan booking, kemudian mengulangi startup di JVM baru. CI menjalankan kedua perintah dengan JDK 21 tanpa service database. Skrip HTTP ini melengkapi pemeriksaan visual browser.
 
 ## Cara kerja
 
-Satu tahap per branch sesuai [roadmap](docs/PROJECT.md). Pertahankan perubahan lokal; Jefry melakukan commit, push, PR dan merge. UC-01 dimulai setelah fondasi masuk main melalui PR #6. UC-02 menunggu UC-01 direview dan diintegrasikan. Status working tree belum berarti perubahan telah terintegrasi. Ikuti [CONTRIBUTING.md](CONTRIBUTING.md).
+Satu tahap per branch sesuai [roadmap](docs/PROJECT.md). Pertahankan perubahan lokal; Jefry melakukan commit, push, PR dan merge. UC-02 dikerjakan setelah UC-01 masuk main melalui PR #7. UC-03 menunggu UC-02 direview dan diintegrasikan. Status working tree belum berarti perubahan telah terintegrasi. Ikuti [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Migrasi MySQL historis V1/V2 tetap utuh. Pada H2, placeholder opsi engine/kolasi dikosongkan dan Hibernate memakai `ddl-auto=validate`. Migrasi PostgreSQL khusus disiapkan pada DB-01 di lokasi terpisah.

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Booking Antrean Online')}"></head>
+<body class="booking-page"><header th:replace="~{fragments/layout :: header}"></header>
+<div class="app-shell">
+  <nav class="sidebar" aria-label="Menu pasien"><p class="eyebrow">PASIEN</p>
+    <a class="schedule-nav" th:href="@{/pasien}">Ringkasan</a>
+    <a class="schedule-nav" th:href="@{/pasien/jadwal}">Jadwal praktik</a>
+    <a class="nav-active" th:href="@{/pasien/booking}" aria-current="page">Booking Antrean</a>
+  </nav>
+  <main class="content schedule-content">
+    <p class="help">Antrean / Booking antrean</p>
+    <h1 th:text="${konfirmasi == true ? 'Konfirmasi Booking' : 'Booking Antrean Online'}">Booking Antrean Online</h1>
+    <p class="muted">Periksa data pasien dan jadwal kunjungan sebelum mengonfirmasi booking.</p>
+    <div th:if="${pesanGalat != null}" class="card" role="alert">
+      <h2>Booking belum dapat dilanjutkan</h2><p class="alert danger" th:text="${pesanGalat}"></p>
+      <a class="button outline" th:href="@{/pasien/jadwal}">Pilih jadwal lain</a>
+      <a th:if="${cobaLagi != null}" class="button primary" th:href="@{/pasien/booking/konfirmasi(idJadwal=${cobaLagi})}">Coba lagi</a>
+      <section th:if="${alternatif != null and !#lists.isEmpty(alternatif)}" aria-label="Sesi alternatif" class="booking-alternatives">
+        <h2>Sesi alternatif</h2><ul><li th:each="a : ${alternatif}">
+          <a th:href="@{/pasien/booking(idJadwal=${a.idJadwal})}" th:text="${a.tanggal.toString() + ' · ' + a.sesi + ' · ' + a.dokter + ' · ' + a.jamMulai + '–' + a.jamSelesai}"></a>
+        </li></ul>
+      </section>
+    </div>
+    <div th:if="${ringkasan != null}" class="booking-grid" th:with="j=${ringkasan.jadwal},p=${ringkasan.pasien}">
+      <section class="card booking-main" aria-labelledby="booking-heading">
+        <h2 id="booking-heading" th:text="${konfirmasi == true ? 'Periksa Data Pendaftaran' : 'Jadwal Praktik yang Dipilih'}"></h2>
+        <p class="help">Pastikan poli, dokter, tanggal, dan sesi praktik sudah sesuai.</p>
+        <div class="booking-fields">
+          <div><label for="booking-poli">Poli</label><input id="booking-poli" readonly th:value="${j.poli}"></div>
+          <div><label for="booking-dokter">Dokter</label><input id="booking-dokter" readonly th:value="${j.dokter}"></div>
+          <div><label for="booking-tanggal">Tanggal kunjungan</label><input id="booking-tanggal" readonly th:value="${j.tanggal.toString()}"></div>
+          <div><label for="booking-sesi">Sesi praktik</label><input id="booking-sesi" readonly th:value="${j.sesi + ' · ' + j.jamMulai + '–' + j.jamSelesai + ' WIB'}"></div>
+        </div>
+        <div class="booking-selected"><p class="eyebrow">Jadwal yang dipilih</p><h3 th:text="${j.dokter + ' · ' + j.poli}"></h3>
+          <p th:text="${j.tanggal.toString() + ' | ' + j.jamMulai + '–' + j.jamSelesai + ' WIB'}"></p><span class="badge schedule-available">Tersedia</span>
+        </div>
+        <h3>Informasi Pendaftaran</h3>
+        <p class="help">Nomor antrean diterbitkan setelah booking berhasil dikonfirmasi. Ketersediaan kuota diperiksa kembali saat konfirmasi.</p>
+        <a class="booking-change" th:href="@{/pasien/jadwal(tanggal=${j.tanggal},idPoli=${j.idPoli},idDokter=${j.idDokter})}">Ubah pilihan jadwal</a>
+        <div th:if="${konfirmasi != true}" class="booking-actions">
+          <a class="button outline" th:href="@{/pasien/jadwal}">Batal</a>
+          <a class="button primary" th:href="@{/pasien/booking/konfirmasi(idJadwal=${j.idJadwal})}">Lanjut ke Konfirmasi Data</a>
+        </div>
+        <div th:if="${konfirmasi == true}" class="booking-actions">
+          <form method="post" th:action="@{/pasien/booking/batal}"><input type="hidden" name="bookingToken" th:value="${bookingToken}"><button type="submit" class="outline">Batal</button></form>
+          <form id="booking-confirm" method="post" th:action="@{/pasien/booking/konfirmasi}"><input type="hidden" name="bookingToken" th:value="${bookingToken}"><button type="submit" class="primary">Konfirmasi Booking</button></form>
+        </div>
+      </section>
+      <aside class="booking-side">
+        <section class="card" aria-labelledby="patient-heading"><h2 id="patient-heading">Data Pasien</h2><p class="booking-patient" th:text="${p.nama}"></p><p class="help">Pasien</p>
+          <dl class="booking-details"><dt>No. Rekam Medis</dt><dd th:text="${p.noRekamMedis}"></dd></dl>
+        </section>
+        <section class="card" aria-labelledby="summary-heading"><h2 id="summary-heading">Ringkasan Booking</h2>
+          <dl class="booking-details"><dt>Poli</dt><dd th:text="${j.poli}"></dd><dt>Dokter</dt><dd th:text="${j.dokter}"></dd><dt>Tanggal</dt><dd th:text="${j.tanggal.toString()}"></dd><dt>Sesi</dt><dd th:text="${j.sesi}"></dd><dt>Jam praktik</dt><dd th:text="${j.jamMulai + '–' + j.jamSelesai}"></dd><dt>Sisa kuota</dt><dd th:text="${j.sisaKuota + ' dari ' + j.kuotaTotal}"></dd></dl>
+          <span class="badge schedule-available">Kuota tersedia</span>
+        </section>
+        <p class="schedule-info">Pastikan hadir sesuai jadwal yang dipilih.</p>
+      </aside>
+    </div>
+  </main>
+</div><footer th:replace="~{fragments/layout :: footer}"></footer>
+<script th:src="@{/js/booking.js}" defer></script>
+</body></html>

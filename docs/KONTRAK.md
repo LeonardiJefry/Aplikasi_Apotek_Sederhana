@@ -52,9 +52,24 @@ PIC implementasi Jefry. Acuan: Modul 2 PC-01 hlm. 86–87, UI-01 hlm. 97; Hi-Fi 
 - `GET /pasien/jadwal/data?tanggal=YYYY-MM-DD&idPoli=...&idDokter=...`: snapshot `{jadwal: [...], diperbaruiPada: "HH:mm:ss"}`. Setiap item DTO memuat `idJadwal`, `idDokter`, `dokter`, `spesialisasi`, `idPoli`, `poli`, `tanggal`, `sesi`, `jamMulai`, `jamSelesai`, `kuotaTotal`, `sisaKuota`, `status`. Jam memakai HH:mm, status kuota Tersedia/Penuh. Tidak ada data identitas pasien. Respons memakai Cache-Control no-store.
 - Hasil kosong adalah 200 dengan daftar kosong/pesan Jadwal tidak tersedia. Input tidak valid 400; gangguan akses DB 503 dengan pesan umum. Semua rute tetap di prefix pasien dan layanan memvalidasi identitas pasien dari sesi.
 - Polling nominal 5 detik, satu permintaan aktif, timeout 8 detik, dan tombol perbarui manual. Data lama ditandai bila refresh gagal; pilihan jadwal dinonaktifkan sampai snapshot segar tersedia. Redirect login/akses berubah diperlakukan sebagai sesi kedaluwarsa, bukan snapshot sukses.
-- `GET /pasien/jadwal/pilih?idJadwal=...` adalah titik sambung baca-saja untuk UC-02. Server membaca ulang jadwal; Penuh ditolak 409, ID hilang/tidak ditemukan 404. Halaman menjelaskan bahwa belum ada pendaftaran. Tidak membuat tiket, tidak mengurangi kuota, dan tidak menerima ID pasien dari form. UC-02 nanti mengganti/melanjutkan titik sambung ini dengan ringkasan dan konfirmasi booking yang sebenarnya.
+- `GET /pasien/jadwal/pilih?idJadwal=...` membaca ulang jadwal; Penuh ditolak 409, ID hilang/tidak ditemukan 404. Pada UC-02, pilihan valid menghasilkan redirect 302 ke `/pasien/booking?idJadwal=...`. GET tidak membuat tiket, mengurangi kuota, atau menerima ID pasien dari form. Ringkasan UC-02 juga memeriksa waktu berakhir sesi.
 
 `JadwalService`, `JadwalDto` dan query bersama dapat digunakan tahap berikutnya; aturan tulis serta penguncian UC-02 tetap mengikuti kontrak transaksi di bawah. Pemeriksaan kuota pada pilihan UC-01 bukan reservasi; UC-02 wajib memvalidasi ulang dalam transaksi.
+
+### UC-02 yang disediakan
+
+PIC Jefry. Acuan: Modul 2 UC-02 hlm. 5, PC-02 hlm. 87-88, UI-02 hlm. 99; Hi-Fi RSI `115:1129`. Tidak menambah entitas/migrasi atau mengubah status kontrak.
+
+- `GET /pasien/booking?idJadwal=...` menampilkan ringkasan jadwal dan pasien dari sesi. `GET /pasien/booking/konfirmasi?idJadwal=...` menyiapkan form dengan draft terikat sesi/pasien/jadwal. Tanpa ID, kembali ke jadwal. Keduanya tidak menulis DB atau mencadangkan slot.
+- `POST /pasien/booking/konfirmasi` menerima `bookingToken` dan CSRF. ID pasien dari CurrentUserService, ID jadwal dari draft server; parameter tambahan bukan sumber keduanya. Draft berlaku 15 menit, maksimal 16 per sesi. PK tiket 12 karakter acak menjadi kunci retry, tanpa kolom/migrasi baru.
+- BookingService mengunci JadwalPraktik lalu Antrean, mengecek tiket token yang sama, lalu memvalidasi kuota positif dan waktu server sebelum akhir sesi. Nomor baru adalah MAX seluruh nomor per jadwal + 1, termasuk tiket berstatus akhir; tidak menggunakan ulang nomor yang dibatalkan. INSERT Terdaftar dan pengurangan kuota atomik. Respons sukses 303 menuju tiket. Retry token sama mengembalikan tiket sama tanpa pengurangan lagi, termasuk saat kuota kini nol/sesi berakhir. Ini tidak menetapkan UNIQUE pasien/jadwal yang tidak ada di PDM.
+- `POST /pasien/booking/batal` membuang draft yang belum tersimpan dan 303 ke jadwal tanpa efek DB. Jika form lama sudah menghasilkan tiket, arahkan ke tiket itu; tidak mengubah status/kuota. Pembatalan tiket tersimpan mengikuti UC-04.
+- `GET /pasien/booking/tiket/{idAntrean}` memuat tiket sendiri melalui query kepemilikan. Tiket pasien lain/tidak dikenal 404, peran lain 403; respons pribadi no-store. `/pasien/antrean/{idAntrean}` sementara menampilkan detail/status tersimpan untuk sambungan UC-03. Posisi antrean, nomor sedang dilayani dan polling status belum disediakan.
+- Kuota penuh/sesi berakhir: 409, maksimal lima alternatif poli sama dengan kuota positif dan waktu akhir belum lewat, diurutkan tanggal/jam. ID/draft tidak valid atau kedaluwarsa: 400; jadwal hilang: 404; gangguan DB: 503 dengan pesan umum dan jalur kembali/coba lagi. Simpan gagal me-rollback tiket dan kuota.
+
+DTO `Ringkasan` berisi `pasien: {nama, noRekamMedis}` dan `jadwal: JadwalDto`. DTO `Tiket` berisi `idAntrean`, `nomorAntrean`, `statusAntrean`, `waktuBooking`, `pasien` dan `jadwal`. Contoh sintetis hasil booking JDW-003 pada database demo baru: `idAntrean=7X4HD9P2Q6KC`, `nomorAntrean=2`, `statusAntrean=Terdaftar`, `pasien.nama=Pasien Demo Dua`, `pasien.noRekamMedis=DEMO-RM-002`, `jadwal.sisaKuota=8`. Token/waktu aktual dibangkitkan server. Nama/noRM hanya untuk pemilik tiket; tidak ada NIK/password/hash di DTO. Gunakan ID tiket dan repository bersama untuk UC-03/05, dengan pemeriksaan kepemilikan/status baru pada tiap tindakan.
+
+Penguncian dan rollback UC-02 telah diverifikasi pada H2 READ_COMMITTED melalui dua thread dan trigger kegagalan UPDATE, bukan hanya mock repository. PostgreSQL tetap memerlukan regresi transaksi pada DB-01.
 
 | Pemilik | Permukaan integrasi yang disediakan | Konsumen |
 | --- | --- | --- |

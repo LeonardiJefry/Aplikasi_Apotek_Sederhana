@@ -6,10 +6,5 @@
   <a th:href="@{/pasien/jadwal}">← Kembali ke jadwal praktik</a>
   <h1>Pilihan Jadwal</h1>
   <p th:if="${pesanGalat != null}" class="alert danger" role="alert" th:text="${pesanGalat}"></p>
-  <section th:if="${jadwal != null}" class="card" aria-label="Jadwal yang dipilih">
-    <h2 th:text="${jadwal.dokter}"></h2><p th:text="${jadwal.poli + ' · ' + jadwal.tanggal.toString() + ' · ' + jadwal.sesi}"></p>
-    <p th:text="${jadwal.jamMulai + '–' + jadwal.jamSelesai + ' · Sisa kuota: ' + jadwal.sisaKuota}"></p>
-    <p class="alert">Pemilihan ini belum membuat pendaftaran antrean. Pendaftaran online belum tersedia. Silakan hubungi loket untuk melanjutkan pendaftaran.</p>
-    <a class="button outline" th:href="@{/pasien/jadwal(tanggal=${jadwal.tanggal},idPoli=${jadwal.idPoli},idDokter=${jadwal.idDokter})}">Pilih jadwal lain</a>
-  </section>
+  <a class="button outline" th:href="@{/pasien/jadwal}">Pilih jadwal lain</a>
 </main><footer th:replace="~{fragments/layout :: footer}"></footer></body></html>

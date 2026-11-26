@@ -50,6 +50,34 @@ footer { color:#6b7280; font-size:12px; text-align:center; padding:20px; border-
 .schedule-page button:disabled,.schedule-choice[aria-disabled=true] { color:#6b7280; background:#f3f4f6; cursor:not-allowed; pointer-events:none; }
 .schedule-refresh [hidden],.schedule-empty[hidden] { display:none; }
 .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+.booking-grid { display:grid; grid-template-columns:minmax(0,1.8fr) minmax(260px,1fr); gap:24px; align-items:start; }
+.booking-grid .card { margin:0; padding:24px; border-radius:12px; }
+.booking-fields { display:grid; grid-template-columns:1fr 1fr; gap:20px 24px; margin:24px 0; padding-top:24px; border-top:1px solid var(--border); }
+.booking-fields input { margin:0; min-width:0; font-size:13px; }
+.booking-fields label { font-size:12px; color:var(--muted); }
+.booking-selected { background:var(--brand-soft); padding:20px; border-radius:8px; margin:24px 0; }
+.booking-selected h3 { font-size:16px; margin:8px 0; }
+.booking-selected p { font-size:12px; }
+.booking-main > h3 { padding-top:20px; border-top:1px solid var(--border); font-size:16px; }
+.booking-main .help { font-size:13px; }
+.booking-side { display:grid; gap:24px; }
+.booking-side .schedule-info { margin:0; }
+.booking-patient { font-weight:600; margin-bottom:0; }
+.booking-details { display:grid; grid-template-columns:minmax(90px,1fr) minmax(0,1.5fr); margin:20px 0; font-size:12px; }
+.booking-details dt,.booking-details dd { padding:12px 0; margin:0; border-bottom:1px solid var(--border); overflow-wrap:anywhere; }
+.booking-details dt { color:var(--muted); padding-right:12px; }
+.booking-details dd { font-weight:500; }
+.booking-actions { display:flex; justify-content:flex-end; align-items:center; gap:12px; flex-wrap:wrap; margin-top:24px; }
+.booking-actions form { margin:0; }
+.booking-change { display:inline-block; font-size:13px; margin-top:12px; }
+.booking-page button:disabled { opacity:.6; cursor:wait; }
+.booking-actions input[type=hidden] { display:none; }
+.booking-ticket { margin:auto; max-width:780px; }
+.booking-number { font-size:64px; font-weight:600; color:var(--brand); margin:20px 0; line-height:1; }
+.booking-alternatives { margin-top:24px; }
+.booking-alternatives li { margin:12px 0; }
+@media(max-width:1050px) { .booking-grid { grid-template-columns:1fr; } }
+@media(max-width:760px) { .booking-fields { grid-template-columns:1fr; } .booking-actions { align-items:stretch; flex-direction:column; } .booking-actions button,.booking-actions .button { width:100%; } }
 @media(max-width:1050px) { .schedule-filter form { grid-template-columns:1fr 1fr; } }
 @media(max-width:760px) { .schedule-content { padding:24px 16px; } .schedule-filter form { grid-template-columns:1fr; gap:16px; } .schedule-summary { flex-direction:column; } .schedule-breadcrumb { flex-direction:column; gap:4px; } .schedule-table { min-width:760px; } }
 @media(max-width:760px) { .login-page { padding:16px; } .login-shell { grid-template-columns:1fr; min-height:0; } .welcome-panel { padding:24px; gap:20px; } .welcome-panel h1 { font-size:32px; } .welcome-note { display:none; } .login-form { padding:32px 24px; } .topbar { padding:16px; } .app-shell { grid-template-columns:1fr; } .sidebar { padding:16px; border-right:0; border-bottom:1px solid var(--border); } .sidebar .eyebrow,.sidebar .help { display:none; } .content { padding:24px 16px; } h1 { font-size:28px; } .card { padding:24px; } .error-card { margin:32px 16px; } }

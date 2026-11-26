@@ -116,8 +116,8 @@ class JadwalTests {
     @Test void selectingAvailableScheduleOnlyReadsAndUnknownScheduleReturns404() throws Exception {
         var count = jdbc.queryForObject("SELECT COUNT(*) FROM Antrean", Integer.class);
         var choice = mvc.perform(get("/pasien/jadwal/pilih", "pasien").param("idJadwal", "JDW-001")).andReturn().getResponse();
-        assertThat(choice.getStatus()).isEqualTo(200);
-        assertThat(choice.getContentAsString()).contains("dr. Demo Satu", "belum membuat pendaftaran antrean", today());
+        assertThat(choice.getStatus()).isEqualTo(302);
+        assertThat(choice.getHeader("Location")).isEqualTo("/pasien/booking?idJadwal=JDW-001");
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM Antrean", Integer.class)).isEqualTo(count);
         assertThat(jdbc.queryForObject("SELECT sisaKuota FROM JadwalPraktik WHERE idJadwal='JDW-001'", Integer.class)).isEqualTo(6);
         assertThat(mvc.perform(get("/pasien/jadwal/pilih", "pasien").param("idJadwal", "UNKNOWN")).andReturn().getResponse().getStatus()).isEqualTo(404);

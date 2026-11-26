@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Tiket Booking Antrean')}"></head>
+<body class="booking-page"><header th:replace="~{fragments/layout :: header}"></header>
+<main class="content booking-ticket">
+  <a th:href="@{/pasien/jadwal}">Kembali ke jadwal praktik</a>
+  <h1 th:text="${pantau == true ? 'Status Pendaftaran' : 'Tiket Booking Antrean'}"></h1>
+  <p th:if="${pesanGalat != null}" class="alert danger" role="alert" th:text="${pesanGalat}"></p>
+  <section th:if="${tiket != null}" class="card" th:with="j=${tiket.jadwal},p=${tiket.pasien}" aria-labelledby="ticket-title">
+    <h2 id="ticket-title">Nomor antrean Anda</h2><p class="booking-number" th:text="${#numbers.formatInteger(tiket.nomorAntrean,3)}"></p>
+    <span class="badge" th:text="${tiket.statusAntrean}"></span>
+    <dl class="booking-details"><dt>ID tiket</dt><dd id="ticket-id" th:text="${tiket.idAntrean}"></dd>
+      <dt>Nama pasien</dt><dd th:text="${p.nama}"></dd><dt>No. Rekam Medis</dt><dd th:text="${p.noRekamMedis}"></dd>
+      <dt>Poli</dt><dd th:text="${j.poli}"></dd><dt>Dokter</dt><dd th:text="${j.dokter}"></dd>
+      <dt>Tanggal</dt><dd th:text="${j.tanggal.toString()}"></dd><dt>Sesi / Jam</dt><dd th:text="${j.sesi + ' · ' + j.jamMulai + '–' + j.jamSelesai + ' WIB'}"></dd>
+      <dt>Waktu booking</dt><dd th:text="${tiket.waktuBooking + ' WIB'}"></dd>
+    </dl>
+    <p class="schedule-info">Simpan ID tiket dan nomor antrean ini. Pastikan hadir sesuai jadwal kunjungan.</p>
+    <a th:if="${pantau != true}" class="button primary" th:href="@{/pasien/antrean/{id}(id=${tiket.idAntrean})}">Lihat Status Pendaftaran</a>
+    <a th:if="${pantau == true}" class="button outline" th:href="@{/pasien/booking/tiket/{id}(id=${tiket.idAntrean})}">Lihat Tiket Booking</a>
+  </section>
+</main><footer th:replace="~{fragments/layout :: footer}"></footer></body></html>
