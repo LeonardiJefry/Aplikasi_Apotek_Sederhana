@@ -44,6 +44,18 @@ Perubahan bersama ini disiapkan untuk ditinjau Jefry sebagai PIC tunggal. Refere
 
 ## Antarmuka antarmodul
 
+### UC-01 yang disediakan
+
+PIC implementasi Jefry. Acuan: Modul 2 PC-01 hlm. 86–87, UI-01 hlm. 97; Hi-Fi RSI `115:881` (UI-01 desktop). Tidak ada perubahan entitas, status antrean, atau migrasi.
+
+- `GET /pasien/jadwal`: halaman pasien. Tanggal wajib pada pencarian dan minimal satu `idPoli` atau `idDokter`; dua filter dipakai bersama (AND), dokter harus sesuai poli. Kunjungan awal mengisi tanggal server Asia/Jakarta dan meminta pengguna memilih filter. Dokter pada dropdown mengikuti poli.
+- `GET /pasien/jadwal/data?tanggal=YYYY-MM-DD&idPoli=...&idDokter=...`: snapshot `{jadwal: [...], diperbaruiPada: "HH:mm:ss"}`. Setiap item DTO memuat `idJadwal`, `idDokter`, `dokter`, `spesialisasi`, `idPoli`, `poli`, `tanggal`, `sesi`, `jamMulai`, `jamSelesai`, `kuotaTotal`, `sisaKuota`, `status`. Jam memakai HH:mm, status kuota Tersedia/Penuh. Tidak ada data identitas pasien. Respons memakai Cache-Control no-store.
+- Hasil kosong adalah 200 dengan daftar kosong/pesan Jadwal tidak tersedia. Input tidak valid 400; gangguan akses DB 503 dengan pesan umum. Semua rute tetap di prefix pasien dan layanan memvalidasi identitas pasien dari sesi.
+- Polling nominal 5 detik, satu permintaan aktif, timeout 8 detik, dan tombol perbarui manual. Data lama ditandai bila refresh gagal; pilihan jadwal dinonaktifkan sampai snapshot segar tersedia. Redirect login/akses berubah diperlakukan sebagai sesi kedaluwarsa, bukan snapshot sukses.
+- `GET /pasien/jadwal/pilih?idJadwal=...` adalah titik sambung baca-saja untuk UC-02. Server membaca ulang jadwal; Penuh ditolak 409, ID hilang/tidak ditemukan 404. Halaman menjelaskan bahwa belum ada pendaftaran. Tidak membuat tiket, tidak mengurangi kuota, dan tidak menerima ID pasien dari form. UC-02 nanti mengganti/melanjutkan titik sambung ini dengan ringkasan dan konfirmasi booking yang sebenarnya.
+
+`JadwalService`, `JadwalDto` dan query bersama dapat digunakan tahap berikutnya; aturan tulis serta penguncian UC-02 tetap mengikuti kontrak transaksi di bawah. Pemeriksaan kuota pada pilihan UC-01 bukan reservasi; UC-02 wajib memvalidasi ulang dalam transaksi.
+
 | Pemilik | Permukaan integrasi yang disediakan | Konsumen |
 | --- | --- | --- |
 | MF | Baca `JadwalPraktik` menurut tanggal dan filter poli/dokter. Hasil memuat `idJadwal`, dokter, poli, tanggal, sesi, jam, kuota, dan status ketersediaan. Booking menerima `idJadwal` dan mengembalikan `idAntrean`, `nomorAntrean`, dan `sisaKuota`. | RA, NA, JL, AH |

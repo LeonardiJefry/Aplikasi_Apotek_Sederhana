@@ -4,21 +4,49 @@ Diperbarui: 26 November 2026 (WIB). PIC seluruh tahap: Jefry (JL).
 
 ## Tahap aktif
 
-**SETUP-00: review - 46 tes lulus; menunggu commit dan integrasi ke main oleh Jefry.**
+**UC-01: review — implementasi jadwal praktik dan sisa kuota siap ditinjau. SETUP-00: done melalui PR #6.**
 
-Branch tujuan: `chore/setup-00-fondasi`. Branch aktual sesi: `main`; perubahan masih di working tree dan belum di-commit atau diintegrasikan. `.git` hanya dapat dibaca dalam sesi ini. Tidak ada commit, push, PR, atau merge oleh agent. Perubahan lokal awal termasuk `mvnw.cmd` dipertahankan. `.env` pribadi tidak diubah; SHA-256 awal/akhir sama dan file tetap diabaikan Git.
+Branch tujuan UC-01: `feat/uc-01-jadwal`. Branch aktual sesi: `chore/setup-00-fondasi` pada `a90c2e2`, working tree awal bersih. PR [#6](https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana/pull/6) sudah merged ke main (`2fe5510`). Perbandingan GitHub antara a90c2e2 dan merge commit menghasilkan daftar berkas kosong: isi baseline lokal sama dengan hasil integrasi. Main lokal belum diperbarui. Pembuatan branch UC-01 ditolak karena `.git` hanya baca; perubahan fitur tetap di working tree dan perlu dipindahkan ke branch tujuan oleh Jefry sebelum commit. Tidak ada commit/push/PR/merge oleh agent; .env pribadi tidak diedit.
+
+## UC-01 — implementasi dan verifikasi terbaru
+
+Acuan dibaca: Modul 2 revisi PC-01 halaman 86–87, UI-01 halaman 97; metadata, design context dan screenshot Hi-Fi RSI frame `115:881`. Implementasi memakai layout/tokens fondasi, form HTML native, dan data sintetis yang sama.
+
+- JadwalBoundary, JadwalService dan JadwalDto menyediakan filter tanggal + minimal satu poli/dokter, validasi hubungan dokter-poli, daftar dokter sesuai poli, snapshot tanpa identitas pasien, hasil kosong, serta pesan kesalahan.
+- Jadwal dibaca melalui query repository bersama dengan fetch dokter/poli. Tidak ada skema/entity/migrasi baru atau perubahan data seed.
+- `/pasien/jadwal/data` memakai no-store dan dibaca ulang; polling 5 detik dengan timeout, refresh manual, kondisi data lama dan sesi kedaluwarsa. Link pilihan dinonaktifkan saat refresh gagal.
+- Pilih Jadwal membuka titik sambung baca-saja; server membaca ulang kuota dan menolak Penuh (409) atau ID tidak ditemukan (404). Belum membuat tiket atau mengurangi kuota. Booking nyata tetap UC-02.
+- Tampilan tanggal ringkasan dipastikan YYYY-MM-DD; waktu HH:mm. Field date native dapat menampilkan format locale browser, tetapi nilai kiriman memakai YYYY-MM-DD.
+
+| Pemeriksaan UC-01 | Hasil aktual |
+| --- | --- |
+| Maven lokal 3.9.16 offline verify | BUILD SUCCESS, 59 tes lulus (13 JadwalTests + 46 fondasi), 0 gagal/error/skipped |
+| Maven Wrapper Windows offline verify setelah koreksi format tanggal | BUILD SUCCESS, 59 tes lulus. JDK 24.0.2, compile release 21, Mockito agent dari cache. Log `target/uc01-wrapper-final.log` |
+| Git Bash verify | Terhalang sebelum Maven: MSYS `NtCreateDirectoryObject ... 0xC0000022`; `target/uc01-bash-verify.log` |
+| Smoke executable JAR, dua JVM baru | Lulus: enam akun per startup, akses lintas peran, CSRF, logout, snapshot UC-01, validasi, privasi dan pilihan read-only. Log `target/uc01-smoke.log`; pengulangan final termasuk tanggal ada di `target/uc01-smoke-final.log` |
+| Browser localhost dengan akun pasien | Lulus: form, tabel Poli Umum 6/10, pilihan dokter mengikuti poli, filter kosong ditolak, hasil tanpa jadwal, ringkasan pilihan, auto-refresh teramati tiap 5 detik, akses /admin ditolak |
+| Browser saat koneksi server sengaja dihentikan | Lulus: pesan data terakhir belum diperbarui muncul, link Pilih Jadwal kehilangan href dan aria-disabled=true |
+| Sintaks JavaScript/Python dan git diff --check | Lulus |
+
+Tes otomatis juga mengubah sisa kuota menjadi nol di transaksi uji, memeriksa JSON/status Penuh, tombol disabled, penolakan pemilihan lewat URL dan tidak adanya efek samping tiket/kuota. Seluruh perubahan fixture di-rollback. Browser memakai proses H2 sementara; proses tersebut sudah dihentikan.
+
+Keterbatasan review visual: screenshot desktop telah diperiksa, tetapi layout bersama dan font fallback fondasi dipertahankan. Unduhan SVG Figma timeout; tidak ada aset rusak/URL sementara di runtime. Ikon, font dan posisi layout bersama belum identik seluruhnya dengan frame Figma. Tampilan mobile menggunakan CSS responsif tetapi belum diperiksa di viewport perangkat. Tidak mengklaim hasil pixel-identik atau CI GitHub yang belum dijalankan untuk UC-01.
+
+Daftar berkas UC-01: boundary/JadwalBoundary.java; controller/JadwalDto.java dan JadwalService.java; repository/JadwalPraktikRepository.java dan DokterRepository.java; templates/jadwal/index.html dan pilihan.html; templates/index.html; static/js/jadwal.js; static/css/app.css; JadwalTests.java; scripts/smoke_demo.py; README.md; SETUP.md; docs/KONTRAK.md; docs/SETUP_00_VERIFIKASI.md; PROGRESS.md.
+
+Langkah berikutnya: pindahkan perubahan ke feat/uc-01-jadwal berbasis origin/main, review hasil, lalu commit/push/PR/merge oleh Jefry. Setelah UC-01 masuk main, mulai UC-02. Usulan commit: `feat(uc-01): add practice schedules and live remaining quotas`.
 
 Instruksi AGENTS.md revisi sudah diterapkan dari versi mandiri yang dibaca dan dikonfirmasi ulang oleh Jefry. Roadmap/kartu/kontrak direkonsiliasi dengan panduan revisi versi 2 dan kode aktual. ZIP revisi `Klinik_Leonardo_Agent_Setup (1).zip` telah diidentifikasi, tetapi transfer bytes gagal karena DNS; isi PROGRESS.md asli di arsip belum dapat dibandingkan. Catatan ini dibuat berdasarkan hasil aktual workspace, bukan mengasumsikan tahap di arsip sudah selesai.
 
-## Verifikasi lokal terbaru dan keputusan tahap berikutnya
+## Riwayat verifikasi SETUP-00 sebelum integrasi
 
 Laporan Surefire terbaru telah diperiksa: ApotekApplicationTests 8, DefaultDemoProfileTests 1, DemoProfileTests 9, SchemaConstraintsTests 27, ServletSecurityTests 1; total **46 tes, 0 gagal, 0 error, 0 skipped**. Tes servlet dengan Tomcat sungguhan kini lulus di terminal lokal.
 
 Log `target/demo-smoke-2.log` mencatat Tomcat berhasil startup kedua pada port 18080, 26 November 2026 pukul 20.29 WIB. Jefry mengonfirmasi aplikasi sudah bisa berjalan. Ketercapaian startup kedua berarti pemeriksaan run pertama telah dilewati skrip. Hasil akhir skrip dinyatakan berhasil berdasarkan konfirmasi Jefry; stdout PASS tidak tersimpan dalam log aplikasi. Pemeriksaan visual seluruh halaman browser belum dicatat terpisah.
 
-Git masih di `main` pada commit `4cbba12`, dengan seluruh perubahan fondasi berada di working tree. Ini belum merupakan integrasi hasil SETUP-00 ke main. Jefry menegaskan: **tunggu commit dan integrasi SETUP-00 sebelum mulai UC-01**. Karena itu agent tidak menambahkan implementasi UC-01, melakukan commit, push, PR, atau merge. Catatan error sandbox dan cache di bagian selanjutnya adalah riwayat percobaan terdahulu, bukan hasil terbaru dari terminal lokal.
+Pada saat verifikasi fondasi, Git masih di main pada 4cbba12 dan Jefry meminta menunggu integrasi. Gerbang ini sekarang terpenuhi melalui PR #6; UC-01 dikerjakan setelah konfirmasi merged dari GitHub. Catatan error sandbox dan cache di bagian selanjutnya adalah riwayat percobaan fondasi.
 
-Langkah berikutnya: Jefry meninjau perubahan, menyimpannya pada branch fondasi, lalu melakukan commit dan integrasi. Setelah konfirmasi atau bukti commit tersedia, cek ulang Git, tandai SETUP-00 done, dan mulai UC-01 pada branch tahapnya.
+Hasil SETUP-00 telah di-commit a90c2e2 dan diintegrasikan oleh Jefry melalui merge 2fe5510. Tidak ada tindakan Git tulis dari agent.
 
 ## Riwayat koreksi setelah uji lokal Jefry - penolakan CSRF
 
@@ -44,8 +72,8 @@ Langkah lokal berikutnya di CMD: `mvnw.cmd --batch-mode --no-transfer-progress v
 
 | Tahap | Status | Prasyarat / langkah berikutnya |
 | --- | --- | --- |
-| SETUP-00 | review | 46 tes lulus; startup kedua tercatat dan aplikasi dikonfirmasi berjalan. Menunggu commit/integrasi oleh Jefry; cek visual browser dan runtime JDK 21 belum dicatat |
-| UC-01 | todo | Tunggu SETUP-00 terverifikasi dan masuk main; `feat/uc-01-jadwal` |
+| SETUP-00 | done | 46 tes lulus; PR #6 merged ke main |
+| UC-01 | review | 59 tes total lulus, smoke dan browser diperiksa; pindahkan working tree ke branch fitur, review dan integrasi oleh Jefry |
 | UC-02 | todo | Setelah UC-01 masuk main |
 | UC-03 | todo | Setelah UC-02 masuk main |
 | UC-04 | todo | Setelah UC-03 masuk main |
@@ -58,7 +86,7 @@ Langkah lokal berikutnya di CMD: `mvnw.cmd --batch-mode --no-transfer-progress v
 | QA-01 | todo | Seluruh UC terintegrasi; regresi lintas peran di H2 |
 | DB-01 | todo | QA-01 lulus dan masuk main; PostgreSQL Supabase |
 
-Belum ada implementasi UI-01 sampai UI-10. Label pemilik MF/RA/NA/AH pada kartu lama adalah asal spesifikasi; Jefry mengerjakan semua tahap. Detail branch/UC/PC/UI ada di [roadmap](docs/PROJECT.md).
+UI-01 sudah diimplementasikan untuk review; UI-02 sampai UI-10 belum diimplementasikan. Label pemilik MF/RA/NA/AH pada kartu lama adalah asal spesifikasi; Jefry mengerjakan semua tahap. Detail branch/UC/PC/UI ada di [roadmap](docs/PROJECT.md).
 
 ## Perubahan SETUP-00 H2
 

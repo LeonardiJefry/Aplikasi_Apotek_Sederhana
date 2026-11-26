@@ -115,4 +115,14 @@ Seed MySQL hanya aktif jika `DEMO_ENABLED=true` dan `DEMO_PASSWORD` valid di `.e
 
 DB-01 baru dibuka setelah QA-01 lulus dan masuk main. Siapkan driver/profil PostgreSQL Supabase serta lokasi migrasi PostgreSQL terpisah. Audit tipe SQL, ekspresi NIK, casing identifier, timezone, constraint dan transaksi dari seluruh UC. Belum ada koneksi, migrasi PostgreSQL, atau kredensial Supabase yang dipasang pada SETUP-00.
 
-Login/layout tetap memakai token Design System Hi-Fi RSI yang sudah diterapkan; tidak ada perubahan layar UC. Font Poppins memakai fallback bila belum tersedia. UI-01 sampai UI-10 menunggu tahap fitur. Model tetap di `id.ac.ub.apotek.entity` dan repository di `id.ac.ub.apotek.repository`; jangan menduplikasi model.
+Login/layout tetap memakai token Design System Hi-Fi RSI yang sudah diterapkan. UC-01 tersedia seperti bagian 7; UI-02 sampai UI-10 menunggu tahap fitur. Font Poppins memakai fallback bila belum tersedia. Model tetap di `id.ac.ub.apotek.entity` dan repository di `id.ac.ub.apotek.repository`; jangan menduplikasi model.
+
+## 7. Mencoba UC-01 — jadwal praktik dan sisa kuota
+
+Jalankan demo seperti bagian 1, login `pasien` dengan password demo, lalu klik **Lihat Jadwal Praktik** atau buka `/pasien/jadwal`. Gunakan tanggal default dan Poli Umum: fixture menampilkan dr. Demo Satu, sesi Pagi, 08:00–14:00, sisa 6/10. Poli Gigi menampilkan dokter gigi. Memilih poli lain mereset dokter yang tidak cocok. Tanpa poli/dokter, form dan server menolak pencarian.
+
+Hasil diperbarui otomatis setiap 5 detik dan bisa diperbarui manual. Tanggal tanpa jadwal menampilkan Jadwal tidak tersedia. Pemilihan jadwal membaca ulang kuota; jika sudah penuh, server menolak. Pilih Jadwal hanya membuka informasi pilihan, belum membuat antrean atau mengurangi kuota. Booking sesungguhnya dikerjakan pada UC-02.
+
+Tes JadwalTests mencakup tanggal/filter tidak valid, kombinasi dokter-poli, hasil kosong, kuota berubah menjadi penuh, pilihan read-only, hak akses dan privasi DTO. Skrip smoke JAR juga menguji UC-01 pada kedua startup. Untuk validasi visual, cek dropdown, tabel, refresh, penolakan akses, serta indikator data lama ketika server dihentikan. State Penuh diuji otomatis dengan perubahan fixture transaksional yang di-rollback, tanpa mengubah dataset demo tetap.
+
+Acuan tampilan: Hi-Fi RSI frame `115:881`, memakai ulang layout/tokens fondasi dan kontrol HTML native. Poppins tetap fallback bila tidak tersedia. Ikon SVG Figma tidak berhasil diunduh dari sesi ini (timeout); tidak ada URL sementara atau gambar rusak yang disisipkan. Kesesuaian ikon, font dan layout bersama belum identik dengan seluruh frame Figma. Field tanggal native mengikuti locale browser, sedangkan parameter dan tanggal informasi memakai YYYY-MM-DD.

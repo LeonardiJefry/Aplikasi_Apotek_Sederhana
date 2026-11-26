@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Jadwal Praktik dan Sisa Kuota')}"></head>
+<body class="schedule-page">
+<header th:replace="~{fragments/layout :: header}"></header>
+<div class="app-shell">
+  <nav class="sidebar" aria-label="Menu pasien">
+    <p class="eyebrow">PASIEN</p>
+    <a class="schedule-nav" th:href="@{/pasien}">Ringkasan</a>
+    <a class="nav-active" th:href="@{/pasien/jadwal}" aria-current="page">Jadwal praktik</a>
+    <p class="help">Layanan lebih tertata, kunjungan lebih nyaman.</p>
+  </nav>
+  <main class="content schedule-content">
+    <div class="schedule-breadcrumb"><span>Antrean / Jadwal praktik</span><span th:text="${hariIni + ' · ' + username}"></span></div>
+    <h1>Jadwal Praktik &amp; Sisa Kuota</h1>
+    <p class="muted">Temukan jadwal dokter dan pilih waktu kunjungan yang sesuai.</p>
+    <section class="card schedule-filter" aria-labelledby="filter-heading">
+      <h2 id="filter-heading">Cari Jadwal Praktik</h2>
+      <p class="help">Pilih tanggal kunjungan dan minimal satu poli atau dokter.</p>
+      <form id="schedule-filter" method="get" th:action="@{/pasien/jadwal}">
+        <div><label for="tanggal">Tanggal kunjungan</label><input id="tanggal" name="tanggal" type="date" required th:value="${tanggal}"></div>
+        <div><label for="idPoli">Poli</label><select id="idPoli" name="idPoli">
+          <option value="">Semua Poli</option>
+          <option th:each="p : ${pilihan.poli}" th:value="${p.id}" th:text="${p.nama}" th:selected="${p.id == idPoli}"></option>
+        </select></div>
+        <div><label for="idDokter">Dokter</label><select id="idDokter" name="idDokter">
+          <option value="">Semua Dokter</option>
+          <option th:each="d : ${pilihan.dokter}" th:value="${d.id}" th:text="${d.nama}" th:attr="data-poli=${d.idPoli}"
+                  th:selected="${d.id == idDokter}" th:disabled="${!#strings.isEmpty(idPoli) and d.idPoli != idPoli}"></option>
+        </select></div>
+        <button class="primary" type="submit">Lihat Jadwal</button>
+      </form>
+    </section>
+    <p th:if="${pesanGalat != null}" class="alert danger" role="alert" th:text="${pesanGalat}"></p>
+    <p th:unless="${dicari}" class="schedule-empty">Pilih tanggal kunjungan dan poli atau dokter, lalu klik Lihat Jadwal.</p>
+    <section th:if="${dicari and pesanGalat == null}" id="schedule-results"
+             th:attr="data-api-url=@{/pasien/jadwal/data(tanggal=${tanggal},idPoli=${idPoli},idDokter=${idDokter})},data-choice-url=@{/pasien/jadwal/pilih}"
+             aria-labelledby="results-heading">
+      <div class="schedule-summary">
+        <div><h2 id="results-heading">Jadwal Tersedia</h2><p class="help"><span th:text="${tanggal}"></span> · <span id="result-count" th:text="${#lists.size(jadwal)}"></span> jadwal ditemukan</p></div>
+        <div class="schedule-counts"><span class="badge schedule-available"><span id="available-count" th:text="${tersedia}"></span> Tersedia</span>
+          <span class="badge schedule-full"><span id="full-count" th:text="${penuh}"></span> Penuh</span></div>
+      </div>
+      <div class="card schedule-table-wrap">
+        <table class="schedule-table"><caption class="sr-only">Jadwal praktik dokter dan sisa kuota</caption>
+          <thead><tr><th scope="col">Dokter</th><th scope="col">Poli</th><th scope="col">Sesi</th><th scope="col">Jam praktik</th><th scope="col">Sisa kuota</th><th scope="col">Status</th><th scope="col">Aksi</th></tr></thead>
+          <tbody id="schedule-rows"><tr th:each="j : ${jadwal}">
+            <td><div class="schedule-doctor"><span class="schedule-avatar" aria-hidden="true" th:text="${j.inisial()}"></span><div><strong th:text="${j.dokter}"></strong><small th:text="${j.spesialisasi}"></small></div></div></td>
+            <td th:text="${j.poli}"></td><td th:text="${j.sesi}"></td><td th:text="${j.jamMulai + '–' + j.jamSelesai}"></td>
+            <td th:text="${j.sisaKuota + ' / ' + j.kuotaTotal}"></td>
+            <td><span class="badge" th:classappend="${j.tersedia() ? 'schedule-available' : 'schedule-full'}" th:text="${j.status}"></span></td>
+            <td><a th:if="${j.tersedia()}" class="button primary schedule-choice" th:attr="data-choice-id=${j.idJadwal}" th:href="@{/pasien/jadwal/pilih(idJadwal=${j.idJadwal})}">Pilih Jadwal</a>
+              <button th:unless="${j.tersedia()}" type="button" disabled>Penuh</button></td>
+          </tr></tbody>
+        </table>
+        <p id="schedule-empty" class="schedule-empty" th:hidden="${!#lists.isEmpty(jadwal)}">Jadwal tidak tersedia</p>
+      </div>
+      <div class="schedule-refresh"><p id="refresh-state" class="help" role="status" aria-live="polite" th:text="${'Diperbarui ' + diperbarui + ' WIB'}"></p><button id="refresh-schedule" class="outline" type="button" hidden>Perbarui sekarang</button></div>
+      <p class="schedule-info">Sisa kuota diperbarui mengikuti jumlah pendaftaran yang berhasil. Jadwal dengan kuota penuh tidak dapat dipilih.</p>
+      <noscript><p class="alert">Pembaruan otomatis memerlukan JavaScript. Klik Lihat Jadwal untuk memperbarui kuota.</p></noscript>
+    </section>
+  </main>
+</div>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script th:src="@{/js/jadwal.js}" defer></script>
+</body></html>

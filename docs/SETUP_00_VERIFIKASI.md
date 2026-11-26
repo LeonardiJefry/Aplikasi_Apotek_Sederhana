@@ -2,9 +2,9 @@
 
 Tanggal: 26 November 2026 (WIB). PIC: Jefry (JL). Konteks skema awal: [Issue #3](https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana/issues/3).
 
-**Status: review, menunggu commit dan integrasi ke main.** [PROGRESS.md](../PROGRESS.md) adalah sumber status aktif. Laporan Surefire lokal terbaru menunjukkan **46 tes lulus, 0 gagal/error/skipped**, termasuk regresi servlet HTTP. Log smoke kedua menunjukkan Tomcat berhasil startup pada port 18080 (26 November 2026, 20.29 WIB), dan Jefry mengonfirmasi aplikasi sudah berjalan. Stdout hasil akhir skrip serta pemeriksaan visual browser belum tercatat terpisah. Runtime lokal yang tercatat masih JDK 24 dengan target kompilasi 21.
+**Status: done.** Fondasi a90c2e2 sudah diintegrasikan ke main melalui [PR #6](https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana/pull/6), merge commit 2fe5510; status merged dikonfirmasi lewat GitHub. [PROGRESS.md](../PROGRESS.md) adalah sumber status aktif, kini UC-01. Verifikasi lokal fondasi: **46 tes lulus, 0 gagal/error/skipped**, termasuk regresi servlet HTTP, serta startup kedua berhasil. Runtime lokal JDK 24 dengan target kompilasi 21; CI memakai JDK 21.
 
-Jefry meminta UC-01 **menunggu commit dan integrasi SETUP-00**. Working tree masih di main pada commit `4cbba12`; fondasi belum di-commit. Tidak ada implementasi UC-01, commit, push, PR, atau merge dari agent. Hasil sandbox pada bagian selanjutnya adalah riwayat, bukan hasil lokal terbaru. Roadmap tetap H2 sampai QA-01, lalu PostgreSQL Supabase pada DB-01.
+Permintaan menunggu integrasi SETUP-00 sebelum UC-01 sudah dipenuhi. Jefry melakukan commit/push/merge; agent baru melanjutkan UC-01 setelah memeriksa PR #6. Hasil sandbox pada bagian selanjutnya adalah riwayat, bukan status akhir fondasi. Roadmap tetap H2 sampai QA-01, lalu PostgreSQL Supabase pada DB-01.
 
 ## Koreksi forward POST saat CSRF ditolak
 

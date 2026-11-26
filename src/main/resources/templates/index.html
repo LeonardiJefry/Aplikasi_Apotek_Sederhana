@@ -4,9 +4,10 @@
 <nav class="sidebar" aria-label="Menu utama"><p class="eyebrow">MENU UTAMA</p><a class="nav-active" th:href="@{/}" aria-current="page">Beranda</a><p class="help" th:text="${roleLabel}">Pasien</p></nav>
 <main class="content"><p class="eyebrow" th:text="${roleLabel}">Pasien</p><h1>Selamat datang, <span th:text="${username}">pengguna</span></h1><p class="muted">Anda terhubung dengan Klinik Leonardo.</p>
 <section class="card" aria-labelledby="account-title"><span class="badge">Akun aktif</span><h2 id="account-title">Akses layanan Anda</h2><p th:switch="${peran}">
-<span th:case="'PASIEN'">Layanan jadwal, booking, dan antrean pasien akan tersedia di sini.</span>
+<span th:case="'PASIEN'">Lihat jadwal dokter dan sisa kuota untuk merencanakan kunjungan Anda.</span>
 <span th:case="'PETUGAS_LOKET'">Layanan penerimaan, verifikasi pasien, dan pengelolaan antrean akan tersedia di sini.</span>
 <span th:case="'ADMIN'">Pengaturan kuota layanan vaksinasi akan tersedia di sini.</span>
 <span th:case="'DOKTER'">Jadwal praktik dan antrean pemeriksaan Anda akan tersedia di sini.</span></p>
-<p class="help">Layanan sedang disiapkan. Silakan hubungi petugas jika memerlukan bantuan.</p></section></main></div>
+<a th:if="${peran == 'PASIEN'}" class="button primary" th:href="@{/pasien/jadwal}">Lihat Jadwal Praktik</a>
+<p class="help">Silakan hubungi petugas jika memerlukan bantuan.</p></section></main></div>
 <footer th:replace="~{fragments/layout :: footer}"></footer></body></html>

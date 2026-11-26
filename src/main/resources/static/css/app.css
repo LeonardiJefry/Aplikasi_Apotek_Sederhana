@@ -16,4 +16,40 @@ button,.button { min-height:40px; padding:12px 16px; border:1px solid transparen
 .app-shell { display:grid; grid-template-columns:240px 1fr; min-height:calc(100vh - 150px); } .sidebar { padding:32px 24px; border-right:1px solid var(--border); background:white; } .nav-active { display:block; background:#ccfbf1; color:#0f766e; padding:12px 16px; border-radius:var(--radius); font-size:14px; font-weight:600; }
 .content { padding:48px; max-width:1200px; width:100%; } .card { background:white; border:1px solid var(--border); padding:32px; border-radius:16px; margin-top:32px; } .badge { display:inline-block; background:#ccfbf1; color:#115e59; padding:4px 12px; font-size:12px; border-radius:24px; }
 footer { color:#6b7280; font-size:12px; text-align:center; padding:20px; border-top:1px solid var(--border); } .error-card { max-width:680px; margin:12vh auto; }
+/* UI-01: RSI Hi-Fi 115:881; existing layout, inputs and button tokens are reused. */
+.schedule-content { max-width:none; padding:28px 32px; min-width:0; }
+.schedule-content h1 { font-size:28px; margin:20px 0 8px; }
+.schedule-content > .muted { font-size:14px; margin:0 0 28px; }
+.schedule-breadcrumb { display:flex; justify-content:space-between; gap:16px; color:var(--muted); font-size:12px; }
+.schedule-nav { display:block; padding:12px 16px; color:var(--muted); font-size:14px; }
+.schedule-filter { margin:0; padding:20px 24px 16px; border-radius:12px; }
+.schedule-content h2 { font-size:18px; margin:0; }
+.schedule-filter .help { margin:8px 0 16px; }
+.schedule-filter form { display:grid; grid-template-columns:1fr 1fr 1fr 1.04fr; gap:20px; align-items:end; }
+.schedule-filter label { font-size:12px; color:var(--muted); }
+.schedule-filter input,.schedule-filter select { height:40px; width:100%; margin:0; padding:0 12px; border:1px solid #d1d5db; border-radius:var(--radius); color:var(--text); background:white; font:400 13px/20px 'Poppins',system-ui,sans-serif; }
+.schedule-summary { display:flex; justify-content:space-between; gap:16px; align-items:start; margin:24px 0; }
+.schedule-summary .help { margin:8px 0 0; }
+.schedule-counts { display:flex; gap:12px; flex-wrap:wrap; }
+.schedule-available { background:#ecfdf3; color:#027a48; }
+.schedule-full { background:#fef3f2; color:#b42318; }
+.schedule-table-wrap { margin:0; padding:20px; border-radius:12px; overflow-x:auto; }
+.schedule-table { width:100%; border-collapse:collapse; font-size:12px; text-align:left; }
+.schedule-table th { padding:14px; color:var(--muted); background:#f3f4f6; font-weight:500; white-space:nowrap; }
+.schedule-table td { border-bottom:1px solid var(--border); padding:20px 14px; white-space:nowrap; }
+.schedule-table tr:last-child td { border-bottom:0; }
+.schedule-doctor { display:flex; gap:12px; align-items:center; min-width:190px; }
+.schedule-doctor strong { font-weight:500; font-size:13px; }
+.schedule-doctor small { display:block; margin-top:4px; color:var(--muted); font-size:11px; }
+.schedule-avatar { display:grid; place-items:center; width:40px; height:40px; flex-shrink:0; border-radius:50%; background:var(--brand-soft); color:var(--brand); font-weight:600; }
+.schedule-table .button,.schedule-table button { min-height:36px; padding:10px 16px; font-size:12px; white-space:nowrap; }
+.schedule-table .badge { font-size:11px; }
+.schedule-empty { text-align:center; padding:32px 16px; color:var(--muted); }
+.schedule-info { padding:20px; border-radius:8px; font-size:13px; background:#eff8ff; color:#175cd3; }
+.schedule-refresh { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:12px 0; }
+.schedule-page button:disabled,.schedule-choice[aria-disabled=true] { color:#6b7280; background:#f3f4f6; cursor:not-allowed; pointer-events:none; }
+.schedule-refresh [hidden],.schedule-empty[hidden] { display:none; }
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+@media(max-width:1050px) { .schedule-filter form { grid-template-columns:1fr 1fr; } }
+@media(max-width:760px) { .schedule-content { padding:24px 16px; } .schedule-filter form { grid-template-columns:1fr; gap:16px; } .schedule-summary { flex-direction:column; } .schedule-breadcrumb { flex-direction:column; gap:4px; } .schedule-table { min-width:760px; } }
 @media(max-width:760px) { .login-page { padding:16px; } .login-shell { grid-template-columns:1fr; min-height:0; } .welcome-panel { padding:24px; gap:20px; } .welcome-panel h1 { font-size:32px; } .welcome-note { display:none; } .login-form { padding:32px 24px; } .topbar { padding:16px; } .app-shell { grid-template-columns:1fr; } .sidebar { padding:16px; border-right:0; border-bottom:1px solid var(--border); } .sidebar .eyebrow,.sidebar .help { display:none; } .content { padding:24px 16px; } h1 { font-size:28px; } .card { padding:24px; } .error-card { margin:32px 16px; } }
