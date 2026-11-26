@@ -73,6 +73,10 @@ Untuk pemeriksaan visual, jalankan aplikasi normal di port 8080 dan coba:
 
 Catat hasil build, tes, startup HTTP, dan browser secara terpisah. Lulus MockMvc tidak sama dengan lulus browser. Bila DNS Maven terhalang, periksa `mvn -version` dan cache dependency lokal lalu coba `mvn --offline --batch-mode --no-transfer-progress verify`. Jangan mengganti versi dependency atau mengklaim verify berhasil bila ada artifact yang belum tersimpan. Cache lengkap dan repositori asal artifact tetap diperlukan. Sandbox yang menolak Bash atau loopback perlu dibedakan dari kegagalan aturan aplikasi.
 
+Jika Git Bash gagal sebelum Maven dengan `NtCreateDirectoryObject ... 0xC0000022`, masalahnya berada pada startup MSYS. Wrapper Windows `mvnw.cmd --offline --batch-mode --no-transfer-progress verify` dapat menjadi fallback dari terminal Windows bila distribusi Maven dan dependensi sudah tersimpan. Gunakan cache Maven yang memang lengkap; folder cache lain yang kosong tidak dapat menggantikannya. Settings cache khusus di `target/` hanya alat diagnosis lokal dan tidak diperlukan clone baru/CI.
+
+Jika Tomcat melaporkan `Unable to establish loopback connection` dengan `Permission denied: connect`, koneksi lokal pada lingkungan eksekusi ditolak. Mode offline Maven tidak menyelesaikan pembatasan itu. Jalankan kembali verify lengkap dan smoke JAR dari terminal lokal yang mengizinkan koneksi loopback. Hasil sebagian tes tanpa servlet nyata, atau keberhasilan migrasi H2 sebelum kegagalan Tomcat, belum membuktikan startup, login HTTP maupun tampilan browser berhasil. Hasil aktual UC-05 terbaru dicatat terpisah dari riwayat pada PROGRESS.md.
+
 ## 4. Branch dan serah terima
 
 Sebelum mengedit, baca AGENTS.md, PROGRESS.md, roadmap, kontrak dan kartu tahap. Cek:
@@ -115,7 +119,7 @@ Seed MySQL hanya aktif jika `DEMO_ENABLED=true` dan `DEMO_PASSWORD` valid di `.e
 
 DB-01 baru dibuka setelah QA-01 lulus dan masuk main. Siapkan driver/profil PostgreSQL Supabase serta lokasi migrasi PostgreSQL terpisah. Audit tipe SQL, ekspresi NIK, casing identifier, timezone, constraint dan transaksi dari seluruh UC. Belum ada koneksi, migrasi PostgreSQL, atau kredensial Supabase yang dipasang pada SETUP-00.
 
-Login/layout tetap memakai token Design System Hi-Fi RSI yang sudah diterapkan. UC-01 sampai UC-04 tersedia seperti bagian 7-10; UI-05 sampai UI-10 menunggu tahap fitur. Font Poppins memakai fallback bila belum tersedia. Model tetap di `id.ac.ub.apotek.entity` dan repository di `id.ac.ub.apotek.repository`; jangan menduplikasi model.
+Login/layout tetap memakai token Design System Hi-Fi RSI yang sudah diterapkan. UC-01 sampai UC-05 tersedia seperti bagian 7-11; UI-06 sampai UI-10 menunggu tahap fitur. Font Poppins memakai fallback bila belum tersedia. Model tetap di `id.ac.ub.apotek.entity` dan repository di `id.ac.ub.apotek.repository`; jangan menduplikasi model.
 
 ## 7. Mencoba UC-01 — jadwal praktik dan sisa kuota
 
@@ -149,7 +153,7 @@ Login `pasien2`, klik **Antrean Saya** pada beranda, atau buka `/pasien/antrean`
 - Pada dataset demo baru, pilih tiket ANT-DEMO0004: nomor sendiri 004, status Menunggu, nomor sedang dilayani 001, dan 3 orang di depan pada JDW-001. Hitungan berasal dari entri aktif bernomor lebih kecil, termasuk yang sedang dilayani dan Dilewati; nomor berstatus Selesai/Dibatalkan/Tidak Hadir tidak dihitung. Ini bukan pengurangan dua nomor.
 - Tiket ANT-DEMO0005 pada jadwal dokter lain menampilkan belum ada nomor sedang dilayani dan 0 orang di depan. ANT-DEMO0008/0009 memperlihatkan status akhir, tanpa posisi menunggu. Belum memiliki tiket menampilkan ajakan melihat jadwal.
 - Halaman membaca ulang snapshot setiap 5 detik; tombol **Perbarui sekarang** tersedia jika JavaScript aktif. Tanpa JavaScript, muat ulang halaman. Saat koneksi gagal, data terakhir ditandai belum diperbarui dan tautan tindakan dinonaktifkan sampai snapshot segar diperoleh.
-- Klik Batalkan Antrean jika syarat waktu/status terpenuhi untuk membuka UC-04; GET tidak menulis data dan konfirmasi akhir memakai POST. Check-in masih informasi baca-saja yang mengarahkan ke loket sampai UC-05. Status akhir dan tiket sedang dilayani tidak mengaktifkan keduanya.
+- Klik Batalkan Antrean jika syarat waktu/status terpenuhi untuk membuka UC-04; GET tidak menulis data dan konfirmasi akhir memakai POST. Check-in membuka UC-05 untuk tiket Terdaftar, belum check-in dan berada pada jendela waktu yang benar. Status akhir dan tiket sedang dilayani tidak mengaktifkan keduanya.
 - Akses tiket pasien lain menghasilkan 404 baik HTML maupun JSON, sedangkan akun admin/loket/dokter mendapat 403. Snapshot tidak menampilkan nama, noRM, NIK, ID pasien atau ID tiket orang lain; daftar antrean sesi hanya membawa nomor dan status.
 
 Daftar antrean berikutnya dibatasi lima nomor aktif, diurutkan menurut nomor. Nomor Dilewati bisa tetap muncul; keputusan panggilan ulang mengikuti petugas/UC-06. Jika data memuat beberapa tiket Sedang Dilayani, seluruh nomornya ditampilkan. Belum ada asumsi menit per pasien, sehingga estimasi waktu ditampilkan sebagai tanda pisah dan diberi keterangan belum tersedia.
@@ -169,3 +173,20 @@ Status yang boleh dibatalkan adalah Terdaftar, Menunggu, Hadir/Menunggu dan Dile
 Pembatalan mengunci JadwalPraktik lalu Antrean seperti booking, mengubah status dan mengembalikan satu kuota pada transaksi yang sama. Tes H2 dua thread memeriksa pembatalan ganda, dua pembatalan berbeda dan booking yang bersaing dengan pembatalan. Trigger kegagalan UPDATE kuota membuktikan rollback status serta retry yang aman. Kuota yang sudah mencapai kapasitas menyebabkan penolakan seluruh operasi, bukan pengembalian tambahan.
 
 Tanpa JavaScript atau dukungan dialog native, formulir konfirmasi tampil langsung dan tetap memerlukan tombol Ya, Batalkan. Keberhasilan baru ditampilkan setelah transaksi selesai; halaman hasil membaca status dari DB. Kegagalan simpan menampilkan pesan 503 dan jalur kembali untuk mencoba lagi. Seed dan migrasi tetap utuh. Acuan UC-04 hlm. 6-7, PC-04 hlm. 89, UI-04 hlm. 103; Hi-Fi RSI `111:1005`.
+
+## 11. Mencoba UC-05 - check-in kedatangan dan peringatan loket
+
+Masuk sebagai pasien, gunakan **Check-in hari ini** (`/pasien/check-in`) atau tombol **Check-in** pada tiket di Antrean Saya. Pilih tiket Terdaftar untuk hari yang sama. Halaman menampilkan nomor, dokter/poli/jadwal, tahap kehadiran, jendela check-in dan waktu server Asia/Jakarta. Membuka halaman tidak mengubah data.
+
+1. Untuk fixture `pasien2`, tiket ANT-DEMO0005 berjadwal hari ini pada Poli Gigi 13:00-17:00: check-in dibuka **12:30 sampai 17:00**, inklusif. Di luar waktu itu halaman menolak dan tombol nonaktif; jangan mengubah jam komputer untuk mencobanya.
+2. Alternatif saat 07:30-14:00: booking jadwal Poli Umum hari ini, lalu buka tiket baru dan klik **Check-in sekarang**. Status menjadi Hadir/Menunggu dan waktu check-in server tersimpan. Kuota dan nomor tidak berubah akibat check-in.
+3. Muat ulang hasil: waktu pertama tetap. Kirim ulang form lama: 409, tanpa mengganti waktu kehadiran. Beda hari, tiket pasien lain, status selain Terdaftar atau waktu kehadiran yang sudah ada ditolak. Tombol Kembali hanya berpindah halaman.
+4. Masuk sebagai `loket`, buka **Peringatan Check-in** (`/loket/check-in`). Peringatan menampilkan nomor dan jadwal, tanpa identitas pasien. Setelah pasien check-in, peringatan hilang pada pembaruan berikutnya. Halaman ini tidak memanggil atau melewati nomor; tindakan tersebut adalah UC-06.
+
+Definisi operasional mendekati giliran pada UC-05: tiket Terdaftar yang belum check-in di antara **dua nomor aktif terdepan yang belum Sedang Dilayani**, menurut nomor pada jadwal yang sama. Peringatan hanya berlaku pada hari jadwal selama jendela check-in. Tiket Hadir/Menunggu/Menunggu/Dilewati tetap menghuni posisi antrean; status akhir dikeluarkan. Ketentuan angka dua ini dicatat karena Modul 2 tidak menetapkan angka ambang.
+
+Halaman pasien/loket membaca ulang data setiap 5 detik, dapat diperbarui manual, dan menandai data lama saat gagal. Tombol check-in dinonaktifkan sampai data segar kembali. Tutup peringatan hanya menyembunyikan kartu pada halaman lokal; tombol Tampilkan peringatan yang disembunyikan mengembalikannya. Tidak ada perubahan status di server karena menyembunyikan peringatan. Tanpa JavaScript gunakan reload. Pada viewport kecil tombol check-in tetap berada di bagian bawah layar.
+
+CheckInTests dan CheckInTransactionsTests menguji kedua batas inklusif, di luar rentang dan beda hari, kepemilikan/peran, CSRF, input identitas/waktu palsu, waktu tersimpan yang tidak boleh ditimpa, kuota/nomor/tanggal booking tetap, submit serentak, rollback dan ambang peringatan. CheckInServletTests menguji jalur sukses melalui HTTP Tomcat sungguhan dengan Clock fixture terpisah. Skrip smoke JAR memakai waktu server nyata; di luar jam yang valid, penolakan adalah hasil yang benar. Clock/fixture tes tidak dipasang sebagai opsi untuk melewati aturan pada aplikasi demo normal.
+
+Acuan: Modul 2 UC-05 hlm. 7-8, PC-05 hlm. 89-91, UI-05 hlm. 105; Figma desktop `89:579`, mobile `89:597` dan peringatan loket `93:737`. Hasil aktual browser, startup dan keterbatasan visual ada di PROGRESS.md.

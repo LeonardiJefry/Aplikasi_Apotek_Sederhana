@@ -10,5 +10,7 @@
 <span th:case="'DOKTER'">Jadwal praktik dan antrean pemeriksaan Anda akan tersedia di sini.</span></p>
 <a th:if="${peran == 'PASIEN'}" class="button primary" th:href="@{/pasien/jadwal}">Lihat Jadwal Praktik</a>
 <a th:if="${peran == 'PASIEN'}" class="button outline" th:href="@{/pasien/antrean}">Antrean Saya</a>
+<a th:if="${peran == 'PASIEN'}" class="button outline" th:href="@{/pasien/check-in}">Check-in hari ini</a>
+<a th:if="${peran == 'PETUGAS_LOKET'}" class="button primary" th:href="@{/loket/check-in}">Peringatan Check-in</a>
 <p class="help">Silakan hubungi petugas jika memerlukan bantuan.</p></section></main></div>
 <footer th:replace="~{fragments/layout :: footer}"></footer></body></html>

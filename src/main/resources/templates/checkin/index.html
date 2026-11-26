@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments/layout :: head('Check-in Kedatangan')}"></head><body class="checkin-page">
+<header th:replace="~{fragments/layout :: header}"></header><div class="app-shell"><nav class="sidebar" aria-label="Menu pasien"><p class="eyebrow">PASIEN</p>
+<a class="schedule-nav" th:href="@{/pasien}">Ringkasan</a><a class="nav-active" th:href="@{/pasien/antrean}">Antrean saya</a><a class="schedule-nav" th:href="@{/pasien/jadwal}">Jadwal praktik</a>
+</nav><main class="content schedule-content"><p class="help">Antrean / Check-in</p><h1>Check-in kedatangan</h1><p class="muted">Konfirmasi kehadiran Anda saat tiba di klinik.</p>
+<p th:if="${pesanGalat != null}" id="checkin-error" class="alert danger" role="alert" th:text="${pesanGalat}"></p>
+<p th:if="${berhasil == true}" class="alert cancel-success" role="status">Check-in berhasil. Kehadiran Anda telah tercatat.</p>
+<section th:if="${panel != null and panel.tiket == null}" class="card"><h2>Tidak ada antrean Terdaftar hari ini</h2><p>Buka Antrean Saya untuk memilih tiket kunjungan atau lihat jadwal praktik.</p><a class="button primary" th:href="@{/pasien/antrean}">Antrean Saya</a></section>
+<div th:if="${panel != null and panel.tiket != null}" id="checkin-workspace" th:with="t=${panel.tiket},j=${t.jadwal}"
+     th:attr="data-api-url=@{/pasien/antrean/{id}/check-in/data(id=${t.idAntrean})},data-ticket-id=${t.idAntrean}">
+  <div class="checkin-grid"><section class="card checkin-ticket"><div class="cancel-heading"><h2>Antrean kunjungan</h2><span class="badge" id="checkin-status" th:text="${t.statusAntrean}"></span></div>
+    <p class="help">Nomor antrean Anda</p><p class="checkin-number" id="checkin-number" th:text="${t.nomorTampilan()}"></p>
+    <dl class="checkin-details"><div><dt>Poli</dt><dd th:text="${j.poli}"></dd></div><div><dt>Dokter</dt><dd th:text="${j.dokter}"></dd></div><div><dt>Tanggal</dt><dd th:text="${j.tanggal.toString()}"></dd></div><div><dt>Sesi / Jam praktik</dt><dd th:text="${j.sesi + ' | ' + j.jamMulai + '–' + j.jamSelesai + ' WIB'}"></dd></div></dl>
+    <p class="schedule-info">Check-in dibuka pada hari kunjungan, dari 30 menit sebelum jam mulai sampai jam selesai, termasuk kedua batasnya.</p>
+    <p id="checkin-recorded" class="alert cancel-success" th:hidden="${t.waktuCheckIn == null}" th:text="${t.waktuCheckIn == null ? '' : 'Waktu check-in: ' + t.waktuCheckIn + ' WIB'}"></p>
+    <p id="checkin-eligibility" class="help" th:text="${t.bolehCheckIn ? 'Check-in dapat dilakukan sekarang.' : 'Check-in belum dapat dilakukan dari waktu atau status tiket ini.'}"></p>
+    <a class="checkin-back-mobile" th:href="@{/pasien/antrean/{id}(id=${t.idAntrean})}">Kembali ke Status Antrean</a>
+    <form id="checkin-form" method="post" th:action="@{/pasien/antrean/{id}/check-in(id=${t.idAntrean})}"><div class="checkin-actions"><a class="button outline" th:href="@{/pasien/antrean/{id}(id=${t.idAntrean})}">Kembali ke Status Antrean</a><button id="checkin-submit" class="primary" type="submit" th:disabled="${!t.bolehCheckIn}">Check-in sekarang</button></div></form>
+  </section><aside class="checkin-side"><section class="card"><h2>Status kehadiran</h2><ol class="checkin-steps"><li><strong>Terdaftar</strong><small>Booking antrean berhasil</small></li><li id="checkin-step" th:classappend="${t.waktuCheckIn != null ? 'step-done' : ''}"><strong>Check-in</strong><small id="checkin-step-note" th:text="${t.waktuCheckIn == null ? 'Konfirmasi saat tiba di klinik' : 'Kehadiran telah tercatat'}"></small></li><li><strong>Dipanggil</strong><small>Ikuti panggilan petugas klinik</small></li></ol></section>
+    <section class="card"><h2>Jendela check-in</h2><p class="checkin-window" id="checkin-window" th:text="${t.batasBuka + ' — ' + t.batasTutup + ' WIB'}"></p><span class="badge" id="checkin-window-state" th:text="${t.jendelaDibuka ? 'Check-in dibuka' : 'Di luar jendela check-in'}"></span><p class="help" id="checkin-now" th:text="${'Waktu server ' + panel.sekarang + ' WIB'}"></p></section>
+  </aside></div>
+  <div class="schedule-refresh"><p id="checkin-refresh-state" class="help" role="status" aria-live="polite">Status dibaca dari server.</p><button id="checkin-refresh" type="button" class="outline" hidden>Perbarui sekarang</button></div><noscript><p class="help">Muat ulang halaman untuk melihat waktu dan status terbaru.</p></noscript>
+</div><a th:if="${panel == null}" class="button outline" th:href="@{/pasien/antrean}">Kembali ke Antrean Saya</a>
+</main></div><footer th:replace="~{fragments/layout :: footer}"></footer><script th:src="@{/js/check-in.js}" defer></script></body></html>

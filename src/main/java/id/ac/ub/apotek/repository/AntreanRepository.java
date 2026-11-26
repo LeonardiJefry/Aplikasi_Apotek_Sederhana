@@ -4,6 +4,20 @@ import id.ac.ub.apotek.entity.Antrean;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AntreanRepository extends JpaRepository<Antrean, String> {
+    interface Kehadiran {
+        int getNomorAntrean();
+        String getStatusAntrean();
+        java.time.LocalDateTime getWaktuCheckIn();
+    }
+    @org.springframework.data.jpa.repository.Query("""
+            select a.nomorAntrean as nomorAntrean,a.statusAntrean as statusAntrean,a.waktuCheckIn as waktuCheckIn
+            from Antrean a where a.jadwal.idJadwal=:jadwal
+              and a.statusAntrean in ('Terdaftar','Menunggu','Hadir/Menunggu','Dilewati')
+            order by a.nomorAntrean
+            """)
+    java.util.List<Kehadiran> terdepanBelumDilayani(@org.springframework.data.repository.query.Param("jadwal") String idJadwal,
+            org.springframework.data.domain.Pageable pageable);
+
     @org.springframework.data.jpa.repository.Query("select a.jadwal.idJadwal from Antrean a where a.idAntrean = :id and a.pasien.idPasien = :pasien")
     java.util.Optional<String> jadwalTiketPasien(@org.springframework.data.repository.query.Param("id") String id,
             @org.springframework.data.repository.query.Param("pasien") String idPasien);
