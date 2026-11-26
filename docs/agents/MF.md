@@ -1,5 +1,7 @@
 # MF · M. Furqanurrahman
 
+> Roadmap mandiri: Jefry (JL) mengerjakan UC-01/02. Nama MF dipertahankan sebagai rujukan rancangan. Gunakan H2 demo/test, ikuti urutan dan dependensi di [roadmap](../PROJECT.md), dan catat hasil di [PROGRESS.md](../../PROGRESS.md).
+
 Pemilik jadwal praktik dan booking pasien. Rujukan Modul 2 UC-01/02, PC-01/02 dan UI-01/02, serta Modul 3 MF–SC01 (hlm. 9–14).
 
 | Issue | Branch | Modul yang dikerjakan |

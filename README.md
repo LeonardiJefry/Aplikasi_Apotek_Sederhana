@@ -1,92 +1,49 @@
-# Aplikasi Apotek Sederhana
+# Klinik Leonardo — Aplikasi Apotek Sederhana
 
-Proyek kelompok RSI menggunakan Java, Spring Boot, Thymeleaf, dan MySQL dengan pola Boundary–Controller–Entity (BCE).
+Web Klinik Pratama Sehat Bersama, RSI Kelompok 1. Java 21, Spring Boot, Thymeleaf, Spring Security dan Spring Data JPA dengan pola BCE. Jefry (JL) mengerjakan seluruh tahap secara berurutan.
 
-## Status
+## Jalankan dari Git Bash
 
-Fondasi proyek dan kolaborasi sudah disiapkan. Halaman awal dapat dijalankan; fitur bisnis, entitas, dan tabel akan mengikuti rancangan Modul 2 yang disepakati tim.
+Pasang JDK 21, pastikan `java -version` serta `JAVA_HOME` sesuai, lalu dari folder repo:
 
-## Teknologi
+```bash
+./mvnw --batch-mode --no-transfer-progress verify
+./mvnw spring-boot:run -Dspring-boot.run.profiles=demo
+```
 
-| Bagian | Pilihan |
+Buka [http://localhost:8080/login](http://localhost:8080/login). Profil default juga `demo`, sehingga `./mvnw spring-boot:run` memakai H2 tanpa server database, Docker, atau file `.env`. Unduhan Maven/dependensi diperlukan pada build pertama.
+
+| Akun sintetis | Peran |
 | --- | --- |
-| Java | JDK 21 |
-| Backend | Spring Boot 4.1.2, Spring MVC |
-| Tampilan | Thymeleaf, HTML, CSS, JavaScript |
-| Database | MySQL 8.4, Spring Data JPA |
-| Build | Maven Wrapper |
-| Pengujian | JUnit, H2 untuk test lokal, MySQL di CI |
+| `pasien`, `pasien2` | Pasien |
+| `loket` | Petugas loket |
+| `admin` | Admin |
+| `dokter`, `dokter2` | Dokter |
 
-Versi Spring Boot mengacu pada [dokumentasi resmi](https://docs.spring.io/spring-boot/). Jika praktikum menetapkan versi lain, sepakati perubahan melalui pull request.
+Password demo lokal: `demo-klinik-2026`. Ini fixture publik sintetis. Untuk menggantinya pada proses demo, `export DEMO_LOCAL_PASSWORD='password_demo_minimal_12_karakter'` sebelum menjalankan aplikasi. Database H2 hanya berada di memori dan kembali ke fixture awal setelah JVM berhenti. Server demo mendengarkan di `127.0.0.1`.
 
-## Mulai di Windows (PowerShell)
+## Profil dan status
 
-1. Pasang Git dan JDK 21. Pastikan `java -version` menampilkan versi 21 dan `JAVA_HOME` mengarah ke folder JDK.
-2. Ambil proyek:
-
-~~~powershell
-git clone https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana.git
-cd Aplikasi_Apotek_Sederhana
-Copy-Item .env.example .env
-~~~
-
-3. Edit `.env` dan isi konfigurasi database lokal. Aplikasi membaca file ini otomatis dari folder proyek.
-
-**Pilihan A — Docker Desktop:**
-
-~~~powershell
-docker compose up -d --wait
-~~~
-
-**Pilihan B — MySQL yang sudah terpasang:**
-
-Buat database `apotek` pada MySQL, lalu sesuaikan host, port, username, dan password di `.env`. Tidak perlu menjalankan Docker jika sudah memakai MySQL lokal. Setiap anggota memakai database lokal masing-masing.
-
-4. Jalankan:
-
-~~~powershell
-.\mvnw.cmd spring-boot:run
-~~~
-
-Buka [http://localhost:8080](http://localhost:8080). Unduhan Maven dan dependency memerlukan internet pada build pertama.
-
-Untuk macOS/Linux, salin konfigurasi memakai `cp .env.example .env`, lalu jalankan `./mvnw spring-boot:run`.
-
-## Pemeriksaan sebelum mengirim kode
-
-~~~powershell
-.\mvnw.cmd --batch-mode verify
-~~~
-
-Test lokal memakai H2 di memori, sehingga tidak memerlukan MySQL. GitHub Actions juga menjalankan test terhadap MySQL 8.4.
-
-## Cara kerja tim
-
-1. Buat atau ambil satu [Issue](https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana/issues), lalu tentukan satu PIC.
-2. Buat branch dari `main`: `feat/nama-fitur`, `fix/nama-bug`, atau `docs/nama-dokumen`.
-3. Kerjakan dan uji perubahan.
-4. Push branch, lalu buka pull request ke `main` dan cantumkan `Closes #nomor-issue`.
-5. Minta satu teman melakukan review. Setelah CI hijau dan review selesai, gabungkan dengan **Squash and merge**.
-
-Lihat [panduan kontribusi](CONTRIBUTING.md), [arsitektur BCE](docs/ARSITEKTUR.md), dan [pengaturan tim](docs/SETUP_TIM.md).
-
-## Peta folder
-
-| Lokasi | Isi |
+| Profil | Database dan konfigurasi |
 | --- | --- |
-| `src/main/java/id/ac/ub/apotek/boundary` | Penerima HTTP, validasi input, penghubung ke tampilan |
-| `src/main/java/id/ac/ub/apotek/controller` | Alur use case dan aturan bisnis |
-| `src/main/java/id/ac/ub/apotek/entity` | Entitas JPA sesuai model data |
-| `src/main/java/id/ac/ub/apotek/repository` | Akses database dengan Spring Data JPA |
-| `src/main/resources/templates` | Halaman Thymeleaf |
-| `src/main/resources/static` | CSS dan JavaScript |
-| `src/test` | Test aplikasi |
-| `docs` | Kesepakatan teknis dan panduan tim |
+| `demo` (default) | H2 runtime, Flyway V1/V2, seed sintetis; tidak membaca `.env` |
+| `test` | H2 terpisah untuk tes; tidak membaca `.env` |
+| `mysql` (opsional historis) | Membaca `.env` lama; tidak dibutuhkan dalam alur harian/CI |
+| Supabase | Belum diimplementasikan; DB-01 setelah QA-01 lulus dan masuk main |
 
-## Catatan database
+SETUP-00 menyediakan login dan layout dasar beserta model/repository bersama. UI-01 sampai UI-10 belum diimplementasikan. Lihat [PROGRESS.md](PROGRESS.md) untuk hasil verifikasi aktual, [SETUP.md](SETUP.md) untuk langkah lengkap, [roadmap](docs/PROJECT.md), [kontrak](docs/KONTRAK.md), serta [arsitektur BCE](docs/ARSITEKTUR.md).
 
-Konfigurasi awal memakai `ddl-auto=validate`: aplikasi tidak mengubah tabel otomatis. Sebelum menambahkan entitas, sertakan skrip perubahan skema yang disepakati tim. Gunakan data dummy untuk pengembangan dan simpan password hanya pada `.env` lokal.
+## Pemeriksaan
 
-## Referensi alat
+```bash
+./mvnw --batch-mode --no-transfer-progress verify
+python scripts/smoke_demo.py target/apotek-0.0.1-SNAPSHOT.jar
+```
 
-Maven Wrapper diambil dari [panduan resmi Spring](https://github.com/spring-guides/gs-serving-web-content/tree/main/complete) dan mempertahankan pemberitahuan lisensinya.
+`verify` menjalankan tes migrasi, constraint, login, peran, CSRF, kepemilikan serta profil demo/default, lalu membuat JAR. Skrip Python standar memulai JAR dari folder sementara tanpa `.env`, memeriksa enam akun sintetis, akses lintas peran, password salah, CSRF dan logout, kemudian mengulangi startup di JVM baru. CI menjalankan kedua perintah dengan JDK 21 tanpa service database. Skrip HTTP ini melengkapi pemeriksaan visual browser.
+
+## Cara kerja
+
+Satu tahap per branch sesuai [roadmap](docs/PROJECT.md). Pertahankan perubahan lokal; Jefry melakukan commit, push, PR dan merge. UC-01 menunggu fondasi terverifikasi dan masuk main. Status working tree di `main` belum berarti perubahan telah terintegrasi. Ikuti [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Migrasi MySQL historis V1/V2 tetap utuh. Pada H2, placeholder opsi engine/kolasi dikosongkan dan Hibernate memakai `ddl-auto=validate`. Migrasi PostgreSQL khusus disiapkan pada DB-01 di lokasi terpisah.

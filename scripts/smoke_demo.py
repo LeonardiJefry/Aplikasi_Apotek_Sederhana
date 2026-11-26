@@ -1,0 +1,142 @@
+"""Verify packaged demo startup, login, role isolation and a fresh JVM restart.
+
+Run after Maven verify: python scripts/smoke_demo.py target/apotek-0.0.1-SNAPSHOT.jar
+Uses only the Python standard library, a temporary working directory, and demo data.
+"""
+import html
+import http.cookiejar
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
+import tempfile
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def client():
+    return urllib.request.build_opener(
+        urllib.request.ProxyHandler({}), NoRedirect(),
+        urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+
+
+def request(browser, base, path, fields=None):
+    data = None if fields is None else urllib.parse.urlencode(fields).encode()
+    try:
+        response = browser.open(base + path, data=data, timeout=3)
+    except urllib.error.HTTPError as error:
+        response = error
+    with response:
+        return response.code, response.headers, response.read().decode("utf-8")
+
+
+def expect_status(response, expected, action):
+    code, headers, _ = response
+    if code != expected:
+        raise AssertionError(
+            f"{action}: expected HTTP {expected}, got HTTP {code}; "
+            f"Location={headers.get('Location', '(none)')}")
+    return response
+
+
+def csrf(page):
+    match = re.search(r'name="_csrf"[^>]*value="([^"]+)"', page)
+    if not match:
+        raise AssertionError("CSRF hidden input missing")
+    return html.unescape(match.group(1))
+
+
+def login(browser, base, username, password):
+    code, _, page = request(browser, base, "/login")
+    assert code == 200, f"Login page returned {code}"
+    return request(browser, base, "/login", {
+        "username": username, "password": password, "_csrf": csrf(page)})
+
+
+def check_roles(base, password):
+    areas = {"pasien": "/pasien", "pasien2": "/pasien", "loket": "/loket",
+             "admin": "/admin", "dokter": "/dokter", "dokter2": "/dokter"}
+    anonymous = client()
+    expect_status(request(anonymous, base, "/pasien"), 302, "Anonymous patient page")
+    expect_status(request(anonymous, base, "/login", {"username": "pasien"}),
+                  403, "Login without CSRF token")
+    expect_status(request(anonymous, base, "/pasien"), 302,
+                  "Rejected login must leave user unauthenticated")
+    code, headers, _ = login(anonymous, base, "pasien", "wrong-password")
+    assert code == 302 and headers["Location"].endswith("/login?error")
+    for username, area in areas.items():
+        browser = client()
+        code, headers, _ = login(browser, base, username, password)
+        assert code == 302 and not headers["Location"].endswith("/login?error"), username
+        code, _, page = request(browser, base, area)
+        assert code == 200 and "Akun aktif" in page and username in page, username
+        for other in set(areas.values()) - {area}:
+            expect_status(request(browser, base, other), 403, f"{username}: {other}")
+        expect_status(request(browser, base, "/logout", {}), 403,
+                      f"{username}: logout without CSRF token")
+        expect_status(request(browser, base, area), 200,
+                      f"{username}: rejected logout must keep the session")
+        assert request(browser, base, "/logout", {"_csrf": csrf(page)})[0] == 302
+        assert request(browser, base, area)[0] == 302
+        print(f"PASS login, cross-role rejection, CSRF and logout: {username}")
+
+
+def main():
+    if len(sys.argv) != 2:
+        raise SystemExit("Usage: python scripts/smoke_demo.py PATH_TO_BOOT_JAR")
+    jar = Path(sys.argv[1]).resolve(strict=True)
+    logs = Path("target").resolve()
+    logs.mkdir(exist_ok=True)
+    java_home = os.environ.get("JAVA_HOME")
+    java = str(Path(java_home) / "bin" / ("java.exe" if os.name == "nt" else "java")) if java_home else "java"
+    password = "demo-klinik-2026"  # Public synthetic fixture, never a private credential.
+    base = "http://127.0.0.1:18080"
+    # Exercise packaged demo defaults without inheriting a developer's DB/profile overrides.
+    demo_env = {key: value for key, value in os.environ.items()
+                if not key.upper().startswith(("SPRING_", "DB_", "DEMO_"))
+                and key.upper() not in {"APP_PORT", "SESSION_COOKIE_SECURE"}}
+    for run in (1, 2):
+        log_path = logs / f"demo-smoke-{run}.log"
+        with tempfile.TemporaryDirectory(prefix="klinik-demo-") as directory, log_path.open("w", encoding="utf-8") as log:
+            process = subprocess.Popen([
+                java, "-jar", str(jar), "--spring.profiles.active=demo",
+                "--server.port=18080", "--server.address=127.0.0.1",
+                f"--klinik.demo.password={password}"], cwd=directory, env=demo_env,
+                stdout=log, stderr=subprocess.STDOUT)
+            try:
+                deadline = time.monotonic() + 45
+                while True:
+                    if process.poll() is not None:
+                        raise RuntimeError(f"Demo startup failed (exit {process.returncode}); see {log_path}")
+                    if time.monotonic() >= deadline:
+                        raise TimeoutError(f"Demo startup timed out; see {log_path}")
+                    # Require this process's startup marker before using the fixed local port.
+                    if "Started ApotekApplication" in log_path.read_text(encoding="utf-8", errors="replace"):
+                        try:
+                            code, headers, _ = login(client(), base, "pasien", password)
+                            if code == 302 and not headers["Location"].endswith("/login?error"):
+                                break
+                        except (OSError, urllib.error.URLError):
+                            pass
+                    time.sleep(0.5)
+                check_roles(base, password)
+                print(f"PASS demo startup {run}: fresh working directory, H2, synthetic accounts")
+            finally:
+                process.terminate()
+                try:
+                    process.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait()
+
+
+if __name__ == "__main__":
+    main()

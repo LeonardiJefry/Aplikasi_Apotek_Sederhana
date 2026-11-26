@@ -17,7 +17,7 @@ Aplikasi berada dalam satu proyek Spring Boot. Halaman ditampilkan melalui Thyme
 
 Permintaan halaman diterima boundary, boundary memanggil controller BCE, controller memakai repository dan entity, lalu boundary mengembalikan template. Thymeleaf tidak memanggil repository secara langsung.
 
-`HomeBoundary` saat ini hanya mengembalikan halaman awal dan tidak membutuhkan controller bisnis.
+`HomeBoundary` mengarahkan pengguna ke beranda berdasarkan identitas sesi melalui `CurrentUserService`; aturan akses ditangani Spring Security. Layanan bisnis fitur tetap berada di lapisan controller BCE/service.
 
 ## Kesepakatan sebelum fitur pertama
 
@@ -27,4 +27,4 @@ Permintaan halaman diterima boundary, boundary memanggil controller BCE, control
 4. Sertakan skrip perubahan skema sebelum menambah `@Entity`; konfigurasi `ddl-auto=validate` tidak membuat tabel otomatis.
 5. Setelah endpoint dashboard dan kebutuhan pembaruan ditentukan, implementasikan polling JavaScript sesuai interval yang disepakati. Polling dan WebSocket belum ditambahkan pada fondasi ini.
 
-Belum ada entitas bisnis atau tabel yang diasumsikan dari nama fitur. Tambahkan sesuai rancangan kelompok.
+Fondasi sudah memiliki sembilan entitas JPA bersama untuk tabel PDM dan Pengguna, serta repository dan layanan akses tiket. Flyway mengelola V1/V2; jangan menduplikasi model. H2 demo/test dipakai hingga QA-01, kemudian PostgreSQL Supabase pada DB-01.

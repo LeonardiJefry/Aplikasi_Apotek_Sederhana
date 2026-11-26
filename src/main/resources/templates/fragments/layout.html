@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title th:text="${title} + ' | Klinik Leonardo'">Klinik Leonardo</title><link rel="stylesheet" th:href="@{/css/app.css}"></head>
+<body>
+<a th:fragment="brand" class="brand" th:href="@{/}"><span class="brand-mark" aria-hidden="true">+</span><span>Klinik Leonardo<small>Klinik Pratama Sehat Bersama</small></span></a>
+<header th:fragment="header" class="topbar"><a th:replace="~{fragments/layout :: brand}"></a>
+<form th:action="@{/logout}" method="post"><button class="outline" type="submit">Keluar</button></form></header>
+<footer th:fragment="footer">Klinik Leonardo · Pelayanan yang dekat dengan Anda</footer>
+</body></html>

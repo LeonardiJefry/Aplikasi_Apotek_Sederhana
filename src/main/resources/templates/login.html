@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Masuk')}"></head>
+<body class="login-page"><main class="login-shell">
+<aside class="welcome-panel"><a th:replace="~{fragments/layout :: brand}"></a>
+<div><p class="eyebrow">SELAMAT DATANG</p><h1>Layanan klinik,<br>lebih mudah.</h1><p>Akses layanan dan informasi kunjungan Anda dalam satu tempat.</p></div>
+<p class="welcome-note">Terhubung dari pendaftaran hingga pelayanan.</p></aside>
+<section class="login-form" aria-labelledby="login-title"><p class="eyebrow">KLINIK LEONARDO</p><h2 id="login-title">Masuk ke akun Anda</h2>
+<p class="muted">Gunakan akun yang telah terdaftar di klinik.</p>
+<p th:if="${param.error}" class="alert danger" role="alert">Nama pengguna atau kata sandi salah.</p>
+<p th:if="${param.logout}" class="alert" role="status">Anda berhasil keluar.</p>
+<form th:action="@{/login}" method="post"><label for="username">Nama pengguna</label>
+<input id="username" name="username" autocomplete="username" maxlength="50" required autofocus placeholder="Masukkan nama pengguna">
+<label for="password">Kata sandi</label><input id="password" name="password" type="password" autocomplete="current-password" required placeholder="Masukkan kata sandi">
+<button class="primary full" type="submit">Masuk</button></form>
+<p class="help">Jika Anda memerlukan bantuan akses, hubungi petugas loket.</p></section>
+</main></body></html>
