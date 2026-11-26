@@ -1,40 +1,30 @@
 # Setup kolaborasi Klinik Leonardo
 
-Paket ini berisi panduan repo dan pembagian untuk lima anggota. Tempatkan `AGENTS.md`, `SETUP.md`, dan folder `docs/` di root repo. Jika nama file sudah dipakai, gabungkan panduan ke file yang ada dan pertahankan path yang dirujuk.
+Gunakan panduan ini bersama [AGENTS.md](AGENTS.md) dan [README](README.md) saat berkontribusi ke repo [Aplikasi_Apotek_Sederhana](https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana).
 
-## 1. Siapkan repo sekali
+## 1. Siapkan akses dan pembagian tugas
 
 Setiap anggota memerlukan Git, akun GitHub, dan AI agent yang bisa membaca folder proyek. Gunakan Git Credential Manager atau metode login GitHub yang sudah dipakai masing-masing.
 
-**Sudah ada repo.** Buka root repo, jalankan `git remote -v`, buat branch `docs/setup-agent` dari branch utama yang sudah diperbarui, lalu salin isi paket. Commit `git add AGENTS.md SETUP.md docs` dan `git commit -m "docs: tambah panduan agent Klinik Leonardo"`. Push dengan `git push -u origin docs/setup-agent`, lalu buat PR ke branch utama.
+Pemilik repo mengundang empat anggota lewat [pengaturan Collaborators](https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana/settings/access). Terima undangan sebelum mulai bekerja.
 
-**Repo baru.** Buat repo privat `klinik-leonardo` di GitHub tanpa inisialisasi. Buka PowerShell atau terminal di folder hasil ekstrak paket, lalu jalankan perintah ini. Ganti `USERNAME` dengan pemilik repo.
-
-```bash
-git init -b main
-git add AGENTS.md SETUP.md docs
-git commit -m "docs: siapkan kolaborasi Klinik Leonardo"
-git remote add origin https://github.com/USERNAME/klinik-leonardo.git
-git push -u origin main
-```
-
-Pemilik repo mengundang empat anggota dari **Settings → Collaborators → Add people** untuk repo pribadi. Setiap anggota menerima undangan sebelum clone. Buat satu issue untuk fondasi dengan judul `[SETUP-00] Fondasi aplikasi, login, MySQL dan data demo`. Buat 10 issue fitur dengan judul dari [daftar pekerjaan](docs/PROJECT.md#pembagian-dan-urutan-kerja), tetapkan pemilik, dan isi tautan kartu serta dependensinya. Nomor issue GitHub berbeda dari ID use case.
+Gunakan [Issue #2](https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana/issues/2) untuk mencatat pembagian tugas dan [Issue #3](https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana/issues/3) untuk koordinasi skema awal. Catat pekerjaan fondasi aplikasi, login, MySQL, dan data demo dengan ID [SETUP-00]. Buat satu issue per use case sesuai [daftar pekerjaan](docs/PROJECT.md#pembagian-dan-urutan-kerja), tetapkan pemilik, dan isi tautan kartu serta dependensinya. Nomor issue GitHub berbeda dari ID use case.
 
 ## 2. Gabung dari komputer masing-masing
 
-Jalankan perintah ini sekali. Buka folder `klinik-leonardo` sebagai workspace di IDE atau agent.
+Jalankan perintah ini saat pertama kali clone. Buka folder `Aplikasi_Apotek_Sederhana` sebagai workspace di IDE atau agent.
 
 ```bash
-git clone https://github.com/USERNAME/klinik-leonardo.git
-cd klinik-leonardo
+git clone https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana.git
+cd Aplikasi_Apotek_Sederhana
 git status --short
 ```
 
-Sebelum mulai satu issue baru, pastikan perubahan lokal sudah disimpan, lalu pakai contoh berikut. Ganti `main` jika branch utama bernama lain. Ganti branch di baris terakhir sesuai kartu tugas. Untuk melanjutkan branch yang sudah dibuat, gunakan `git switch feat/uc-01-jadwal`.
+Sebelum mulai satu issue baru, pastikan perubahan lokal sudah disimpan, lalu pakai contoh berikut. Ganti branch di baris terakhir sesuai kartu tugas. Untuk melanjutkan branch yang sudah dibuat, gunakan `git switch feat/uc-01-jadwal`.
 
 ```bash
 git switch main
-git pull --ff-only
+git pull --ff-only origin main
 git switch -c feat/uc-01-jadwal
 ```
 
@@ -48,27 +38,35 @@ git switch -c feat/uc-01-jadwal
 
 **Prompt awal yang bisa disalin.** Ganti inisial, UC, dan nomor issue.
 
-> Saya MF, mengerjakan UC-01 pada issue #2 di repo Klinik Leonardo. Baca AGENTS.md, docs/PROJECT.md, docs/KONTRAK.md, dan docs/agents/MF.md. Cek branch dan perubahan lokal. Ringkas batas tugas, dependensi, dan kondisi selesai, lalu implementasikan hanya UC-01. Jalankan verifikasi yang relevan. Laporkan file yang berubah, hasil cek, dan blocker yang masih ada.
+> Saya MF, mengerjakan UC-01 pada issue #N di repo Aplikasi_Apotek_Sederhana. Baca AGENTS.md, docs/PROJECT.md, docs/KONTRAK.md, dan docs/agents/MF.md. Cek branch dan perubahan lokal. Ringkas batas tugas, dependensi, dan kondisi selesai, lalu implementasikan hanya UC-01. Jalankan verifikasi yang relevan. Laporkan file yang berubah, hasil cek, dan blocker yang masih ada.
 
 Untuk sesi pertama, cek apakah agent menyebutkan fitur, pemilik, branch, dan aturan penerimaan yang sesuai dengan kartunya. Buka sesi baru setelah instruksi repo diperbarui.
 
-## 3. Jalankan web setelah SETUP-00 masuk
+## 3. Jalankan aplikasi di komputer masing-masing
 
-Paket ini berisi Markdown. Perintah build berlaku setelah `pom.xml`, Maven Wrapper, konfigurasi, dan migrasi tersedia di branch utama. Instal JDK sesuai `pom.xml` (usulan repo baru Java 21) dan MySQL 8. Masing-masing anggota memakai database lokal. Buat schema `klinik_leonardo` dan akun lokal yang memiliki akses ke schema itu. SETUP-00 mendokumentasikan seed, akun demo, dan cara pembuatan schema.
-
-Contoh dari root proyek di PowerShell. Isi `KATA_SANDI_LOKAL` di terminal pribadi.
+Instal Git, JDK 21, dan MySQL 8.4 atau Docker Desktop sesuai [README](README.md#mulai-di-windows-powershell). Dari root repo di PowerShell, cek versi Java dan buat konfigurasi lokal.
 
 ```powershell
 java -version
-$env:SPRING_PROFILES_ACTIVE = 'dev'
-$env:SPRING_DATASOURCE_URL = 'jdbc:mysql://localhost:3306/klinik_leonardo'
-$env:SPRING_DATASOURCE_USERNAME = 'klinik_dev'
-$env:SPRING_DATASOURCE_PASSWORD = 'KATA_SANDI_LOKAL'
-.\mvnw.cmd test
+if (-not (Test-Path -LiteralPath '.env')) {
+    Copy-Item -LiteralPath '.env.example' -Destination '.env'
+}
+```
+
+Edit `.env` sesuai database lokal. Gunakan nama database `apotek` dan isi `DB_HOST`, `DB_PORT`, `DB_USERNAME`, dan `DB_PASSWORD` berdasarkan konfigurasi masing-masing.
+
+- **Docker Desktop**. Jalankan `docker compose up -d --wait` dari root repo.
+- **MySQL lokal**. Buat database `apotek` dan pastikan akun di `.env` punya akses ke database itu.
+
+Jalankan aplikasi di PowerShell.
+
+```powershell
 .\mvnw.cmd spring-boot:run
 ```
 
-Untuk macOS/Linux, gunakan `export NAMA_VARIABEL='nilai'` untuk empat variabel yang sama. Jalankan `./mvnw test` dan `./mvnw spring-boot:run`. Buka `http://localhost:8080` dan masuk dengan akun demo yang ditulis pada PR fondasi.
+Buka [localhost:8080](http://localhost:8080) untuk melihat halaman awal. Untuk verifikasi build sebelum membuka PR, jalankan `.\mvnw.cmd --batch-mode verify`. Login dan data demo untuk fitur klinik mengikuti hasil pekerjaan SETUP-00.
+
+Untuk macOS/Linux, gunakan langkah pada [README](README.md) dan Maven Wrapper `./mvnw`.
 
 ## 4. Laporkan progres dari issue sampai PR
 
