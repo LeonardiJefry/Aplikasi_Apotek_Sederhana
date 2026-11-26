@@ -81,7 +81,8 @@ public class JadwalBoundary {
         current.requirePasienId();
         response.setHeader("Cache-Control", "no-store");
         try {
-            model.addAttribute("jadwal", service.pilihJadwal(idJadwal));
+            var selected = service.pilihJadwal(idJadwal);
+            return "redirect:/pasien/booking?idJadwal=" + java.net.URLEncoder.encode(selected.idJadwal(), java.nio.charset.StandardCharsets.UTF_8);
         } catch (NoSuchElementException ex) {
             response.setStatus(404); model.addAttribute("pesanGalat", ex.getMessage());
         } catch (IllegalArgumentException ex) {

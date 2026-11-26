@@ -61,7 +61,7 @@ Di Linux dapat memakai `python3`. Skrip hanya memakai pustaka standar Python. `v
 
 Tes regresi `ServletSecurityTests` juga menjalankan Tomcat pada port lokal acak untuk memeriksa forward POST saat CSRF ditolak. Port loopback harus diizinkan. Ini melengkapi MockMvc yang tidak menjalankan forward servlet secara otomatis. Setelah source Java diubah, build ulang JAR sebelum menjalankan skrip smoke; skrip selalu memakai JAR yang ditunjuk, bukan source terbaru.
 
-Skrip HTTP memulai JAR pada `127.0.0.1:18080` dari direktori sementara kosong, memeriksa login enam akun sintetis, password salah, penolakan akses lintas peran, CSRF dan logout. Proses dihentikan, kemudian startup dan pemeriksaan diulang pada JVM baru. Port 18080 harus kosong. Log berada di `target/demo-smoke-1.log` dan `target/demo-smoke-2.log`. CI menggunakan JDK 21, H2, dan kedua perintah ini tanpa service database.
+Skrip HTTP memulai JAR pada `127.0.0.1:18080` dari direktori sementara kosong, memeriksa login enam akun sintetis, password salah, penolakan akses lintas peran, CSRF, logout, jadwal serta booking. Booking memakai jadwal besok, pasien dari sesi, penolakan spoofing, retry tanpa kuota ganda, batal draft dan privasi tiket. Proses dihentikan, kemudian startup dan pemeriksaan diulang pada JVM baru. Port 18080 harus kosong. Log berada di `target/demo-smoke-1.log` dan `target/demo-smoke-2.log`. CI menggunakan JDK 21, H2, dan kedua perintah ini tanpa service database.
 
 Untuk pemeriksaan visual, jalankan aplikasi normal di port 8080 dan coba:
 
@@ -115,14 +115,29 @@ Seed MySQL hanya aktif jika `DEMO_ENABLED=true` dan `DEMO_PASSWORD` valid di `.e
 
 DB-01 baru dibuka setelah QA-01 lulus dan masuk main. Siapkan driver/profil PostgreSQL Supabase serta lokasi migrasi PostgreSQL terpisah. Audit tipe SQL, ekspresi NIK, casing identifier, timezone, constraint dan transaksi dari seluruh UC. Belum ada koneksi, migrasi PostgreSQL, atau kredensial Supabase yang dipasang pada SETUP-00.
 
-Login/layout tetap memakai token Design System Hi-Fi RSI yang sudah diterapkan. UC-01 tersedia seperti bagian 7; UI-02 sampai UI-10 menunggu tahap fitur. Font Poppins memakai fallback bila belum tersedia. Model tetap di `id.ac.ub.apotek.entity` dan repository di `id.ac.ub.apotek.repository`; jangan menduplikasi model.
+Login/layout tetap memakai token Design System Hi-Fi RSI yang sudah diterapkan. UC-01 tersedia seperti bagian 7 dan UC-02 seperti bagian 8; UI-03 sampai UI-10 menunggu tahap fitur. Font Poppins memakai fallback bila belum tersedia. Model tetap di `id.ac.ub.apotek.entity` dan repository di `id.ac.ub.apotek.repository`; jangan menduplikasi model.
 
 ## 7. Mencoba UC-01 — jadwal praktik dan sisa kuota
 
 Jalankan demo seperti bagian 1, login `pasien` dengan password demo, lalu klik **Lihat Jadwal Praktik** atau buka `/pasien/jadwal`. Gunakan tanggal default dan Poli Umum: fixture menampilkan dr. Demo Satu, sesi Pagi, 08:00–14:00, sisa 6/10. Poli Gigi menampilkan dokter gigi. Memilih poli lain mereset dokter yang tidak cocok. Tanpa poli/dokter, form dan server menolak pencarian.
 
-Hasil diperbarui otomatis setiap 5 detik dan bisa diperbarui manual. Tanggal tanpa jadwal menampilkan Jadwal tidak tersedia. Pemilihan jadwal membaca ulang kuota; jika sudah penuh, server menolak. Pilih Jadwal hanya membuka informasi pilihan, belum membuat antrean atau mengurangi kuota. Booking sesungguhnya dikerjakan pada UC-02.
+Hasil diperbarui otomatis setiap 5 detik dan bisa diperbarui manual. Tanggal tanpa jadwal menampilkan Jadwal tidak tersedia. Pemilihan jadwal membaca ulang kuota; jika sudah penuh, server menolak. Pilih Jadwal membuka ringkasan UC-02 tanpa membuat antrean atau mengurangi kuota. Penulisan baru dilakukan saat Konfirmasi Booking.
 
 Tes JadwalTests mencakup tanggal/filter tidak valid, kombinasi dokter-poli, hasil kosong, kuota berubah menjadi penuh, pilihan read-only, hak akses dan privasi DTO. Skrip smoke JAR juga menguji UC-01 pada kedua startup. Untuk validasi visual, cek dropdown, tabel, refresh, penolakan akses, serta indikator data lama ketika server dihentikan. State Penuh diuji otomatis dengan perubahan fixture transaksional yang di-rollback, tanpa mengubah dataset demo tetap.
 
 Acuan tampilan: Hi-Fi RSI frame `115:881`, memakai ulang layout/tokens fondasi dan kontrol HTML native. Poppins tetap fallback bila tidak tersedia. Ikon SVG Figma tidak berhasil diunduh dari sesi ini (timeout); tidak ada URL sementara atau gambar rusak yang disisipkan. Kesesuaian ikon, font dan layout bersama belum identik dengan seluruh frame Figma. Field tanggal native mengikuti locale browser, sedangkan parameter dan tanggal informasi memakai YYYY-MM-DD.
+
+## 8. Mencoba UC-02 - booking antrean online
+
+1. Jalankan demo, login `pasien2`, buka jadwal dan pilih **besok + Poli Umum**. Jadwal JDW-003 dimulai dengan sisa 9/10; tanggal menyesuaikan startup. Jadwal hari ini yang telah melewati jam selesai tidak dapat dibooking.
+2. Klik **Pilih Jadwal**. Periksa poli, dokter, tanggal, sesi, Pasien Demo Dua dan DEMO-RM-002. Ringkasan tidak memesan slot.
+3. Klik **Lanjut ke Konfirmasi Data**, kemudian **Batal**. Cari jadwal yang sama; kuota tetap 9/10.
+4. Ulangi lalu klik **Konfirmasi Booking**. Tiket berstatus Terdaftar dan nomor 002 muncul pada database demo baru. Kuota menjadi 8/10. Membuka ulang halaman tiket tidak membuat booking lagi. Pengiriman ulang form/token yang sama juga mengembalikan tiket tersimpan.
+5. Klik **Lihat Status Pendaftaran** untuk detail/status tersimpan. Pemantauan posisi/nomor sedang dilayani dan refresh status merupakan UC-03. Pembatalan tiket tersimpan dan check-in mengikuti UC-04/05.
+6. Salin URL tiket, logout, lalu login `pasien`. URL tersebut menampilkan Tiket tidak ditemukan (404). Login admin/loket/dokter lalu buka URL booking: akses ditolak (403).
+
+Kuota penuh atau sesi berakhir menghasilkan pesan penolakan dan sesi alternatif terbuka pada poli yang sama jika tersedia. Untuk mencari poli lain, gunakan Pilih jadwal lain. Draft konfirmasi berlaku 15 menit; setelah kedaluwarsa pilih jadwal kembali. Identitas pasien dan pilihan konfirmasi berasal dari sesi server. Form POST memakai CSRF, tanpa field ID pasien.
+
+BookingTests memeriksa ringkasan, konfirmasi, replay, manipulasi input, draft lintas sesi/kedaluwarsa, batal sebelum dan sesudah simpan, kuota menjadi penuh setelah ringkasan, alternatif serta akses peran/kepemilikan. BookingTransactionsTests memakai transaksi nyata H2 untuk perebutan slot terakhir, submit sama bersamaan, nomor tidak digunakan ulang, serta kegagalan UPDATE kuota yang me-rollback tiket dan dapat dicoba lagi. Seed permanen dan migrasi tidak diubah.
+
+Acuan UI-02: Modul 2 bagian 2.7 dan Hi-Fi RSI frame `115:1129`. Desktop diperiksa dengan layout dan fallback font fondasi; kesesuaian penuh ikon/font serta viewport mobile belum diverifikasi. Hasil aktual, versi runtime dan keterbatasan Git Bash tercatat di PROGRESS.md.
