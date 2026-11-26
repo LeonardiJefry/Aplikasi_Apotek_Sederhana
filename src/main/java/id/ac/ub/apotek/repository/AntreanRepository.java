@@ -4,6 +4,25 @@ import id.ac.ub.apotek.entity.Antrean;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AntreanRepository extends JpaRepository<Antrean, String> {
+    @org.springframework.data.jpa.repository.Query("""
+            select a from Antrean a join fetch a.jadwal j join fetch j.dokter join fetch j.poli
+            where a.pasien.idPasien = :pasien
+            order by case when a.statusAntrean in ('Selesai','Dibatalkan','Tidak Hadir') then 1 else 0 end,
+                     j.tanggal, a.nomorAntrean desc, a.idAntrean
+            """)
+    java.util.List<Antrean> daftarTiketPasien(@org.springframework.data.repository.query.Param("pasien") String idPasien);
+
+    /** Proyeksi antrean sesi tidak membawa identitas pasien atau ID tiket orang lain. */
+    interface NomorStatus {
+        int getNomorAntrean();
+        String getStatusAntrean();
+    }
+    @org.springframework.data.jpa.repository.Query("""
+            select a.nomorAntrean as nomorAntrean, a.statusAntrean as statusAntrean
+            from Antrean a where a.jadwal.idJadwal = :jadwal order by a.nomorAntrean
+            """)
+    java.util.List<NomorStatus> nomorStatusSesi(@org.springframework.data.repository.query.Param("jadwal") String idJadwal);
+
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @org.springframework.data.jpa.repository.Query("select a from Antrean a where a.idAntrean = :id")
     java.util.Optional<Antrean> findForUpdate(@org.springframework.data.repository.query.Param("id") String id);

@@ -86,11 +86,10 @@ public class BookingBoundary {
         return new ModelAndView("booking/ringkasan", model.asMap());
     }
 
-    @GetMapping({"/pasien/booking/tiket/{idAntrean}", "/pasien/antrean/{idAntrean}"})
-    public String tiket(@PathVariable String idAntrean, Model model, HttpServletRequest request, HttpServletResponse response) {
+    @GetMapping("/pasien/booking/tiket/{idAntrean}")
+    public String tiket(@PathVariable String idAntrean, Model model, HttpServletResponse response) {
         current.requirePasienId();
         response.setHeader("Cache-Control", "no-store");
-        model.addAttribute("pantau", request.getRequestURI().contains("/pasien/antrean/"));
         try { model.addAttribute("tiket", service.tiket(idAntrean)); }
         catch (BookingException ex) { response.setStatus(404); model.addAttribute("pesanGalat", ex.getMessage()); }
         catch (DataAccessException ex) { response.setStatus(503); model.addAttribute("pesanGalat", "Tiket belum dapat dimuat. Silakan coba lagi."); }

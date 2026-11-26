@@ -154,6 +154,34 @@ def check_booking(base, password):
     print("PASS UC-02: summary, confirmation, owner identity, ticket, replay, quota, cancellation and privacy")
 
 
+def check_queue_status(base, password):
+    browser = client()
+    login(browser, base, "pasien2", password)
+    _, _, page = expect_status(request(browser, base, "/pasien/antrean"), 200, "Patient queue page")
+    assert "Status Antrean" in page and "Daftar Antrean Berikutnya" in page
+    _, headers, body = expect_status(request(browser, base, "/pasien/antrean/ANT-DEMO0004/data?idPasien=PAS-001"),
+                                     200, "Own queue snapshot")
+    snapshot = json.loads(body)
+    ticket = snapshot["dipilih"]
+    assert ticket["idAntrean"] == "ANT-DEMO0004" and ticket["nomorAntrean"] == 4
+    assert ticket["nomorSedangDilayani"] == [1] and ticket["jumlahDiDepan"] == 3
+    assert ticket["statusAntrean"] == "Menunggu" and not ticket["statusAkhir"]
+    assert headers.get("Cache-Control") == "no-store"
+    assert not any(value in body for value in ("Pasien Demo", "DEMO-RM", '"nik":', '"passwordHash":', "ANT-DEMO0001", "ANT-DEMO0003"))
+    expect_status(request(browser, base, "/pasien/antrean/ANT-DEMO0001/data"), 404, "Other patient's queue snapshot")
+    expect_status(request(browser, base, "/pasien/antrean/ANT-DEMO0001"), 404, "Other patient's queue page")
+    expect_status(request(browser, base, "/pasien/antrean/INVALID-LONG-TICKET/data"), 400, "Invalid queue ticket ID")
+    _, _, body = expect_status(request(browser, base, "/pasien/antrean/ANT-DEMO0008/data"), 200, "Final ticket snapshot")
+    final = json.loads(body)["dipilih"]
+    assert final["statusAntrean"] == "Dibatalkan" and final["statusAkhir"]
+    assert final["jumlahDiDepan"] is None and final["berikutnya"] == []
+    assert not final["bolehBatal"] and not final["bolehCheckIn"]
+    admin = client()
+    login(admin, base, "admin", password)
+    expect_status(request(admin, base, "/pasien/antrean/ANT-DEMO0004/data"), 403, "Admin cannot access patient queue")
+    print("PASS UC-03: patient tickets, same-session position, serving number, final status, privacy and role rejection")
+
+
 def main():
     if len(sys.argv) != 2:
         raise SystemExit("Usage: python scripts/smoke_demo.py PATH_TO_BOOT_JAR")
@@ -195,6 +223,7 @@ def main():
                 check_roles(base, password)
                 check_schedule(base, password)
                 check_booking(base, password)
+                check_queue_status(base, password)
                 print(f"PASS demo startup {run}: fresh working directory, H2, synthetic accounts")
             finally:
                 process.terminate()

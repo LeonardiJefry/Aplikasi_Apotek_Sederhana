@@ -115,7 +115,7 @@ Seed MySQL hanya aktif jika `DEMO_ENABLED=true` dan `DEMO_PASSWORD` valid di `.e
 
 DB-01 baru dibuka setelah QA-01 lulus dan masuk main. Siapkan driver/profil PostgreSQL Supabase serta lokasi migrasi PostgreSQL terpisah. Audit tipe SQL, ekspresi NIK, casing identifier, timezone, constraint dan transaksi dari seluruh UC. Belum ada koneksi, migrasi PostgreSQL, atau kredensial Supabase yang dipasang pada SETUP-00.
 
-Login/layout tetap memakai token Design System Hi-Fi RSI yang sudah diterapkan. UC-01 tersedia seperti bagian 7 dan UC-02 seperti bagian 8; UI-03 sampai UI-10 menunggu tahap fitur. Font Poppins memakai fallback bila belum tersedia. Model tetap di `id.ac.ub.apotek.entity` dan repository di `id.ac.ub.apotek.repository`; jangan menduplikasi model.
+Login/layout tetap memakai token Design System Hi-Fi RSI yang sudah diterapkan. UC-01 tersedia seperti bagian 7, UC-02 seperti bagian 8 dan UC-03 seperti bagian 9; UI-04 sampai UI-10 menunggu tahap fitur. Font Poppins memakai fallback bila belum tersedia. Model tetap di `id.ac.ub.apotek.entity` dan repository di `id.ac.ub.apotek.repository`; jangan menduplikasi model.
 
 ## 7. Mencoba UC-01 — jadwal praktik dan sisa kuota
 
@@ -133,7 +133,7 @@ Acuan tampilan: Hi-Fi RSI frame `115:881`, memakai ulang layout/tokens fondasi d
 2. Klik **Pilih Jadwal**. Periksa poli, dokter, tanggal, sesi, Pasien Demo Dua dan DEMO-RM-002. Ringkasan tidak memesan slot.
 3. Klik **Lanjut ke Konfirmasi Data**, kemudian **Batal**. Cari jadwal yang sama; kuota tetap 9/10.
 4. Ulangi lalu klik **Konfirmasi Booking**. Tiket berstatus Terdaftar dan nomor 002 muncul pada database demo baru. Kuota menjadi 8/10. Membuka ulang halaman tiket tidak membuat booking lagi. Pengiriman ulang form/token yang sama juga mengembalikan tiket tersimpan.
-5. Klik **Lihat Status Pendaftaran** untuk detail/status tersimpan. Pemantauan posisi/nomor sedang dilayani dan refresh status merupakan UC-03. Pembatalan tiket tersimpan dan check-in mengikuti UC-04/05.
+5. Klik **Lihat Status Pendaftaran** untuk status antrean UC-03, nomor yang sedang dilayani dan jumlah antrean di depan yang diperbarui otomatis. Pembatalan tiket tersimpan dan check-in mengikuti UC-04/05.
 6. Salin URL tiket, logout, lalu login `pasien`. URL tersebut menampilkan Tiket tidak ditemukan (404). Login admin/loket/dokter lalu buka URL booking: akses ditolak (403).
 
 Kuota penuh atau sesi berakhir menghasilkan pesan penolakan dan sesi alternatif terbuka pada poli yang sama jika tersedia. Untuk mencari poli lain, gunakan Pilih jadwal lain. Draft konfirmasi berlaku 15 menit; setelah kedaluwarsa pilih jadwal kembali. Identitas pasien dan pilihan konfirmasi berasal dari sesi server. Form POST memakai CSRF, tanpa field ID pasien.
@@ -141,3 +141,17 @@ Kuota penuh atau sesi berakhir menghasilkan pesan penolakan dan sesi alternatif 
 BookingTests memeriksa ringkasan, konfirmasi, replay, manipulasi input, draft lintas sesi/kedaluwarsa, batal sebelum dan sesudah simpan, kuota menjadi penuh setelah ringkasan, alternatif serta akses peran/kepemilikan. BookingTransactionsTests memakai transaksi nyata H2 untuk perebutan slot terakhir, submit sama bersamaan, nomor tidak digunakan ulang, serta kegagalan UPDATE kuota yang me-rollback tiket dan dapat dicoba lagi. Seed permanen dan migrasi tidak diubah.
 
 Acuan UI-02: Modul 2 bagian 2.7 dan Hi-Fi RSI frame `115:1129`. Desktop diperiksa dengan layout dan fallback font fondasi; kesesuaian penuh ikon/font serta viewport mobile belum diverifikasi. Hasil aktual, versi runtime dan keterbatasan Git Bash tercatat di PROGRESS.md.
+
+## 9. Mencoba UC-03 - status antrean pasien
+
+Login `pasien2`, klik **Antrean Saya** pada beranda, atau buka `/pasien/antrean`. Pilih tiket dari dropdown **Tiket kunjungan Anda** lalu klik **Lihat Status**. Daftar hanya berisi tiket milik sesi pasien; tiket yang baru dibooking juga bisa dibuka melalui tautan di halaman hasil booking.
+
+- Pada dataset demo baru, pilih tiket ANT-DEMO0004: nomor sendiri 004, status Menunggu, nomor sedang dilayani 001, dan 3 orang di depan pada JDW-001. Hitungan berasal dari entri aktif bernomor lebih kecil, termasuk yang sedang dilayani dan Dilewati; nomor berstatus Selesai/Dibatalkan/Tidak Hadir tidak dihitung. Ini bukan pengurangan dua nomor.
+- Tiket ANT-DEMO0005 pada jadwal dokter lain menampilkan belum ada nomor sedang dilayani dan 0 orang di depan. ANT-DEMO0008/0009 memperlihatkan status akhir, tanpa posisi menunggu. Belum memiliki tiket menampilkan ajakan melihat jadwal.
+- Halaman membaca ulang snapshot setiap 5 detik; tombol **Perbarui sekarang** tersedia jika JavaScript aktif. Tanpa JavaScript, muat ulang halaman. Saat koneksi gagal, data terakhir ditandai belum diperbarui dan tautan tindakan dinonaktifkan sampai snapshot segar diperoleh.
+- Klik Check-in atau Batalkan Antrean hanya jika syarat waktu/status terpenuhi. Saat UC-03, tautannya adalah informasi layanan baca-saja yang mengarahkan ke loket. Tidak menulis status atau kuota. Transaksi mandiri baru dikerjakan pada UC-04/05. Status akhir dan tiket sedang dilayani tidak mengaktifkan keduanya.
+- Akses tiket pasien lain menghasilkan 404 baik HTML maupun JSON, sedangkan akun admin/loket/dokter mendapat 403. Snapshot tidak menampilkan nama, noRM, NIK, ID pasien atau ID tiket orang lain; daftar antrean sesi hanya membawa nomor dan status.
+
+Daftar antrean berikutnya dibatasi lima nomor aktif, diurutkan menurut nomor. Nomor Dilewati bisa tetap muncul; keputusan panggilan ulang mengikuti petugas/UC-06. Jika data memuat beberapa tiket Sedang Dilayani, seluruh nomornya ditampilkan. Belum ada asumsi menit per pasien, sehingga estimasi waktu ditampilkan sebagai tanda pisah dan diberi keterangan belum tersedia.
+
+StatusAntreanTests memeriksa seluruh status, hitungan dengan nomor berlubang, pemisahan sesi/dokter/tanggal, perubahan status, daftar kosong, batas lima nomor, privasi dan kepemilikan, kesalahan 503, akses peran, batas pembatalan 61/60 menit serta batas check-in inklusif. Acuan: Modul 2 UC-03 hlm. 5-6, PC-03 hlm. 88-89, UI-03 hlm. 101; Hi-Fi RSI `111:777`. Hasil browser/startup dan keterbatasan visual aktual dicatat di PROGRESS.md.
