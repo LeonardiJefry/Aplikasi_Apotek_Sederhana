@@ -4,7 +4,57 @@ Diperbarui: 27 November 2026 (WIB). PIC seluruh tahap: Jefry (JL).
 
 ## Tahap aktif
 
-**UC-05: review - implementasi lokal dipertahankan; verifikasi ulang HTTP/startup dan browser terhalang izin loopback pada sesi terbaru. SETUP-00 sampai UC-04: done melalui PR #6 sampai #10.**
+**UC-05: review - alur browser utama sudah lulus: login/peran, kepemilikan, check-in sukses, penolakan pengulangan, peringatan loket, mobile, polling dan fallback tanpa JavaScript. Verify lengkap pada proses agent tetap terhalang izin loopback; perlu kelulusan verify/CI dari lingkungan yang mengizinkan HTTP lokal serta integrasi ke main untuk status done. SETUP-00 sampai UC-04: done melalui PR #6 sampai #10.**
+
+## Penyelesaian cek browser UC-05 - fixture terpisah pukul 08:00 WIB
+
+Jefry menjalankan launcher fixture dari terminal lokal hingga `UC05_UI_FIXTURE_READY`. Pemeriksaan melalui browser memakai JVM/H2 uji di port **18081**, Clock tetap 27 November 2026 pukul 08:00 WIB dan jadwal sintetis JDW-003 hari ini. Server demo normal port 8080 terpisah; jam komputer dan kode aplikasi tidak diubah. Branch aktual `feat/uc-05-check-in`, HEAD `a5aa8e4`; tidak ada push/PR/merge oleh agent.
+
+| Pemeriksaan fixture melalui browser | Hasil aktual |
+| --- | --- |
+| Peringatan sebelum check-in | Loket melihat kartu **001 belum check-in** pada Poli Umum/dr. Demo Satu/Pagi hari ini. Kartu tidak memuat identitas pasien |
+| Tutup, refresh dan pulihkan | Tutup peringatan menyembunyikan kartu; setelah refresh kartu tetap tersembunyi dan tombol pemulihan tampil. Tampilkan peringatan yang disembunyikan mengembalikan kartu. Pasien masih melihat tiket Terdaftar sesudah tindakan loket ini |
+| Kelayakan pasien | Akun pasien membuka Check-in hari ini dan melihat ANT-DEMO0006, nomor **001**, Terdaftar, jendela **07:30-14:00**, waktu server **08:00:00** dan tombol aktif |
+| Check-in sukses | Klik Check-in sekarang melalui formulir normal menghasilkan halaman sukses: **Hadir/Menunggu**, nomor tetap **001**, waktu kehadiran **2026-11-27 08:00:00 WIB** tersimpan. Tombol check-in kemudian nonaktif; tahap kehadiran berubah menjadi tercatat |
+| Peringatan setelah check-in | Refresh loket menghilangkan kartu 001, menampilkan Tidak ada peringatan check-in saat ini dan menyembunyikan tombol pemulihan |
+| Reload hasil | Muat ulang halaman hasil mempertahankan status Hadir/Menunggu, nomor 001 dan waktu kehadiran 08:00:00; tidak menulis kehadiran baru |
+| Formulir lama dan validasi ulang server | Sebelum check-in, siapkan tab kedua dengan formulir sah serta JavaScript sementara nonaktif agar tidak diperbarui polling. Sesudah sukses di tab pertama, kirim formulir lama melalui tombol asli: server menampilkan **Check-in ditolak. Tiket harus berstatus Terdaftar dan belum pernah check-in.** Membaca ulang hasil tetap Hadir/Menunggu, 001, 08:00:00. Ini uji form lama nyata, bukan sekadar tombol hasil yang sudah disabled |
+| Kuota lintas UC | Halaman jadwal setelah sukses dan penolakan pengulangan menunjukkan JDW-003 tetap **9/10**, sesuai fixture awal; JDW-001 tetap 6/10. Check-in tidak menambah atau mengurangi kuota |
+| Pembersihan browser | JavaScript dan override viewport dikembalikan, pasien dan loket logout, tab formulir lama ditutup. Tidak menyimpan screenshot sebagai berkas deliverable |
+
+Pemeriksaan visual sukses dan interaksi kartu yang tertunda pada sesi sebelumnya kini selesai. Batas waktu inklusif, rollback/persaingan transaksi dan penolakan lintas peran tetap didukung hasil tes Java yang tercatat terpisah; fixture visual ini tidak mengubah hasil verify lengkap terbaru yang masih gagal pada dua tes servlet karena pembatasan loopback proses agent. Tidak menjalankan ulang Maven karena source aplikasi tidak berubah. Runtime JDK 21 dan CI UC-05 tetap perlu hasil aktual tersendiri. UC-06 baru dibuka setelah UC-05 terverifikasi dan masuk main; PostgreSQL Supabase tetap DB-01 sesudah QA-01 lulus dan masuk main.
+
+Proses fixture dimulai Jefry. Agent tidak dapat membaca metadata proses melalui CIM untuk mengidentifikasi dan menghentikannya secara aman; hentikan terminal fixture **18081** dengan Ctrl+C setelah pemeriksaan. Jangan menghentikan demo normal 8080 jika masih dipakai. Data fixture ini akan hilang setelah JVM dihentikan.
+
+Berkas tracked yang berubah hanya **PROGRESS.md**; `.env` dan file tambahan lokal tetap memiliki hash yang sama. `git diff --check` lulus. Tidak ada staging/commit/push/PR/merge oleh agent. Usulan commit dokumentasi: `docs(uc-05): record completed browser verification`.
+
+## Riwayat verifikasi browser UC-05 - server normal sebelum fixture
+
+Jefry menjalankan executable JAR demo melalui Git Bash lokal; aplikasi berhasil diakses di `http://localhost:8080`. Ini membuktikan startup HTTP melalui terminal Jefry berhasil, terpisah dari percobaan startup/verify agent yang gagal karena izin loopback. Branch tetap `feat/uc-05-check-in`, commit `a5aa8e4`, belum di-push sesuai keterangan Jefry. Tidak ada perubahan kode aplikasi atau pengulangan tes Java pada sesi browser ini.
+
+| Pemeriksaan browser aktual | Hasil |
+| --- | --- |
+| Login, password salah dan logout | Login pasien, pasien2, loket, admin dan dokter berhasil. Password sintetis salah ditolak. Setelah logout, membuka `/pasien/check-in` kembali ke `/login` |
+| Batas empat peran | Pasien, loket, admin dan dokter masing-masing ditolak saat membuka tiga area peran lain, termasuk URL check-in pasien/loket. Halaman akses dibatasi tampil tanpa data pasien |
+| Kepemilikan tiket | Pasien2 membuka tiket check-in milik pasien pertama: Tiket tidak ditemukan, tanpa detail tiket |
+| Dataset dan alur normal | Fixture sintetis tampil. Buat satu booking melalui jadwal/konfirmasi normal: tiket `WF856C4ZYC77`, nomor 005, JDW-001 hari ini, Terdaftar; kuota 6 menjadi 5 |
+| Sebelum jendela check-in | Waktu server sekitar 06:10-06:16 WIB; jadwal 08:00-14:00 membuka check-in 07:30-14:00. Halaman menolak, tombol nonaktif, nomor/status tetap 005/Terdaftar; waktu kehadiran belum tercatat |
+| Halaman hasil sebelum check-in | `/check-in/hasil` menampilkan Kehadiran belum tercatat; HTTP **409** teramati pada respons navigasi browser |
+| Desktop dan mobile | Kartu jadwal/nomor/status/jendela tampil. Viewport CSS terukur **390 x 844**, scrollWidth 371 <= innerWidth 390, tanpa overflow horizontal. Tombol bawah memakai position fixed, batas bawah 828 < 844, tetap nonaktif sebelum waktunya |
+| Polling, refresh dan data lama | Waktu/status diperbarui dan refresh manual berhasil. Blok sementara hanya request JSON tiket ini menghasilkan pesan data terakhir belum diperbarui, tombol tetap nonaktif. Setelah blok dilepas, refresh kembali berhasil. Tidak ditemukan TypeError/ReferenceError/SyntaxError pada log browser yang diperiksa |
+| Tanpa JavaScript | Setelah script sementara dinonaktifkan dan reload, instruksi muat ulang muncul, tombol refresh JS tersembunyi, tombol check-in tetap nonaktif sesuai hasil server. JavaScript lalu diaktifkan kembali dan halaman dimuat ulang |
+| Loket | Halaman dan refresh peringatan berhasil, keadaan kosong tampil sesuai waktu sebelum jendela dibuka. Kartu berisi peringatan belum tersedia; tutup/pulihkan kartu dan hilangnya kartu setelah check-in belum diuji visual |
+| Pemulihan data dan browser | Tiket pengujian dibatalkan melalui konfirmasi UC-04 normal: Dibatalkan, kuota kembali **6/10**. Riwayat tiket sintetis tetap ada sampai JVM di-restart. Pengaturan viewport, blok request, dan JavaScript dikembalikan; sesi uji logout. Server milik Jefry tetap berjalan |
+
+Belum menyatakan check-in sukses/replay atau interaksi kartu peringatan lulus browser: waktu nyata belum mencapai jendela. Hasil aturan/transaksi dan HTTP dengan Clock terkendali dari sesi sebelumnya tetap tercatat terpisah di bawah. Untuk menuntaskan visual tanpa mengubah jam komputer atau aplikasi normal, helper fixture sementara sudah dikompilasi di `target/uc05-browser-classes` dan disediakan launcher **`bash target/uc05-browser-demo.sh`**. Fixture menjalankan H2/JVM terpisah di port 18081 dengan Clock 08:00 WIB serta jadwal sintetis JDW-003 hari ini; bukan opsi pada JAR normal, tidak mengubah data proses 8080, dan tidak masuk commit. Launcher perlu dijalankan dari Git Bash lokal Jefry karena pembatasan loopback pada proses agent belum berubah. Lanjutkan sukses check-in, reload/replay, serta tutup/pulihkan/hilangnya peringatan pada fixture tersebut, kemudian hentikan proses fixture. UC-06 tetap menunggu UC-05 terverifikasi dan masuk main; Supabase tetap DB-01 sesudah QA-01.
+
+Perubahan tracked sesi ini hanya PROGRESS.md. `.env` dan file tambahan lokal memiliki hash yang sama dengan catatan sebelumnya; tidak ada staging/commit/push/PR/merge oleh agent. Usulan commit dokumentasi setelah pengecekan: `docs(uc-05): record live browser verification`.
+
+## Status Git terbaru - setelah commit oleh Jefry
+
+Branch aktual sudah `feat/uc-05-check-in`, HEAD `a5aa8e4` (`feat(uc-05): add patient check-in and counter alerts`). Author dan committer Jefry; commit dibuat Jefry pada 27 November 2026. Saat pemeriksaan awal sesi ini, seluruh berkas tracked bersih; file tambahan lokal tetap tidak dilacak dan dipertahankan. Jefry menyatakan UC-05 **belum di-push**. Tidak ada push, PR atau merge oleh agent, dan belum ada bukti UC-05 masuk main. Catatan branch UC-04 di bagian sebelumnya merupakan riwayat sebelum commit ini.
+
+Langkah aktif tetap menyelesaikan verifikasi UC-05. Untuk membuka pemeriksaan browser yang masih tertunda, jalankan JAR yang sudah dibuat dari terminal Git Bash lokal dengan `java -jar target/apotek-0.0.1-SNAPSHOT.jar --spring.profiles.active=demo`, lalu biarkan proses berjalan. Perintah ini memakai H2 runtime tanpa MySQL atau Supabase. Kegagalan loopback pada proses yang dijalankan agent sudah dicatat; jangan mengulang tes yang sama tanpa perubahan lingkungan. Sesudah server lokal dapat dibuka, lanjutkan cek login/peran serta UC-05 desktop/mobile. UC-06 menunggu UC-05 terverifikasi dan masuk main sesuai roadmap.
 
 ## Verifikasi ulang UC-05 - 27 November 2026, sesi lanjutan
 
