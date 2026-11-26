@@ -23,3 +23,13 @@ Repo ini untuk web Klinik Leonardo, studi kasus Klinik Pratama Sehat Bersama, RS
 - Ambil identitas dari sesi login, cek peran dan kepemilikan di server, aktifkan CSRF untuk form, serta pakai data sintetis dan konfigurasi lokal. Jangan masukkan identitas pasien asli atau kredensial ke repo, log, atau tangkapan layar PR.
 - Jalankan `./mvnw test` atau `.\mvnw.cmd test` di Windows setelah fondasi tersedia. Coba alur sukses dan penolakan di browser dengan akun demo. Catat perintah dan hasil aktual.
 - Laporkan perubahan, hasil cek, dependensi, dan langkah berikutnya di issue/PR. Serahkan hasil di branch fitur untuk direview. Merge ke branch utama dilakukan oleh tim.
+
+## Aturan commit dan pull request
+
+AI agent boleh membantu mengedit kode, menjalankan pengujian, dan merangkum perubahan. Setelah selesai, tampilkan file yang berubah, hasil pengujian, dan usulan pesan commit. Serahkan commit, push, serta pembuatan atau merge pull request kepada anggota tim.
+
+Setiap anggota menggunakan nama dan email Git miliknya sendiri yang terhubung ke akun GitHub-nya. Jangan menambahkan akun AI atau bot sebagai author, committer, atau `Co-authored-by`. Jika ada anggota lain yang ikut mengerjakan commit, cantumkan mereka sesuai kontribusi sebenarnya.
+
+Sebelum push, tinjau author, committer, dan pesan commit yang akan dikirim. Gunakan `git log -1 --format=fuller` untuk memeriksa commit terakhir.
+
+Ikuti alur kerja tim di [CONTRIBUTING.md](CONTRIBUTING.md).
