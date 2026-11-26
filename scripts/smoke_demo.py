@@ -5,6 +5,7 @@ Uses only the Python standard library, a temporary working directory, and demo d
 """
 import html
 import http.cookiejar
+import json
 import os
 from pathlib import Path
 import re
@@ -89,6 +90,31 @@ def check_roles(base, password):
         print(f"PASS login, cross-role rejection, CSRF and logout: {username}")
 
 
+def check_schedule(base, password):
+    browser = client()
+    login(browser, base, "pasien", password)
+    _, _, page = expect_status(request(browser, base, "/pasien/jadwal"), 200, "Schedule page")
+    date = re.search(r'id="tanggal"[^>]*value="([0-9-]+)"', page)
+    if not date:
+        raise AssertionError("Schedule page did not render the default visit date")
+    query = urllib.parse.urlencode({"tanggal": date.group(1), "idPoli": "POL-001"})
+    _, headers, body = expect_status(request(browser, base, "/pasien/jadwal/data?" + query),
+                                     200, "Schedule snapshot")
+    rows = json.loads(body)["jadwal"]
+    assert len(rows) == 1 and rows[0]["idJadwal"] == "JDW-001"
+    assert rows[0]["sisaKuota"] == 6 and rows[0]["status"] == "Tersedia"
+    assert headers.get("Cache-Control") == "no-store"
+    assert not any(key in rows[0] for key in ("idPasien", "nik", "passwordHash"))
+    expect_status(request(browser, base, "/pasien/jadwal/data"), 400, "Missing schedule filters")
+    expect_status(request(browser, base, "/pasien/jadwal/pilih?idJadwal=UNKNOWN"),
+                  404, "Unknown schedule selection")
+    _, _, choice = expect_status(request(browser, base, "/pasien/jadwal/pilih?idJadwal=JDW-001"),
+                                 200, "Read-only selection")
+    assert "belum membuat pendaftaran antrean" in choice
+    assert date.group(1) in choice, "Selected visit date must use YYYY-MM-DD"
+    print("PASS UC-01: default filters, live snapshot, validation, privacy and read-only selection")
+
+
 def main():
     if len(sys.argv) != 2:
         raise SystemExit("Usage: python scripts/smoke_demo.py PATH_TO_BOOT_JAR")
@@ -128,6 +154,7 @@ def main():
                             pass
                     time.sleep(0.5)
                 check_roles(base, password)
+                check_schedule(base, password)
                 print(f"PASS demo startup {run}: fresh working directory, H2, synthetic accounts")
             finally:
                 process.terminate()
