@@ -1,14 +1,74 @@
 # Progres Klinik Leonardo
 
-Diperbarui: 26 November 2026 (WIB). PIC seluruh tahap: Jefry (JL).
+Diperbarui: 27 November 2026 (WIB). PIC seluruh tahap: Jefry (JL).
 
 ## Tahap aktif
 
-**UC-04: review - pembatalan antrean pasien siap ditinjau. SETUP-00 sampai UC-03: done melalui PR #6 sampai #9.**
+**UC-05: review - implementasi lokal dipertahankan; verifikasi ulang HTTP/startup dan browser terhalang izin loopback pada sesi terbaru. SETUP-00 sampai UC-04: done melalui PR #6 sampai #10.**
+
+## Verifikasi ulang UC-05 - 27 November 2026, sesi lanjutan
+
+Sesuai arahan Jefry, lanjut dari UC-05; tidak mengulang implementasi UC-01 sampai UC-04 atau membuka UC-06. Acuan lokal AGENTS.md, roadmap, kontrak, kartu JL/NA, dan CONTRIBUTING.md sudah dibaca. ZIP revisi `Klinik_Leonardo_Agent_Setup.zip` teridentifikasi sebagai versi 2, tetapi pengambilan byte terbaru gagal DNS; kecocokan isi ZIP tidak dapat diverifikasi ulang. Instruksi lokal sudah menetapkan demo/test H2, PIC tunggal JL, dan DB-01 setelah QA-01 lulus serta masuk main.
+
+Branch aktual tetap `feat/uc-04-batal-antrean` pada `830c6a0`. Percobaan `git switch -c feat/uc-05-check-in` gagal membuat ref lock karena `.git` hanya baca. Seluruh perubahan lokal UC-05 dan file tambahan pribadi dipertahankan; tidak ada staging, commit, push, PR atau merge. Konfirmasi merge/CI pada catatan di bawah berasal dari sesi sebelumnya, bukan pemeriksaan GitHub baru.
+
+Audit konfigurasi: H2 **sudah** berscope runtime dalam pom.xml; profil default demo, profil mysql opsional, migrasi V1/V2, seed enam akun/empat peran, dan CI verify + smoke tanpa service database sudah tersedia. Tidak perlu menambahkan konfigurasi duplikat. Profil demo/test tidak mengimpor `.env`. Tidak mengubah migrasi, seed, login, layout bersama atau konfigurasi Supabase pada sesi ini; kode UC-05 yang ada ditinjau dan dipertahankan.
+
+| Pemeriksaan sesi terbaru | Hasil aktual |
+| --- | --- |
+| Git Bash `./mvnw --batch-mode --no-transfer-progress verify` | Gagal sebelum Maven: MSYS `NtCreateDirectoryObject ... 0xC0000022`. Log `target/uc05-resume-bash-verify.log` |
+| Maven/cache lokal | Maven 3.9.16 tersedia di cache Wrapper; tidak ada `mvn` pada PATH. JDK tersedia 24.0.2, compile release 21. Cache default `.m2/repository` dan settings lokal `target/offline-settings.xml` dapat menjalankan Maven offline. Cache alternatif `target/maven-cache` tidak lengkap; tidak dipakai pada hasil tes berikut |
+| Verify lengkap melalui Wrapper Windows offline | **BUILD FAILURE: 120 tes, 0 failure, 2 error, 0 skipped.** 118 tes lulus. Dua error: CheckInServletTests dan ServletSecurityTests gagal memulai Tomcat karena `Unable to establish loopback connection` / `Permission denied: connect`. Log `target/uc05-resume-verify.log` |
+| Aturan, transaksi, autentikasi dan fixture tanpa servlet nyata | CheckInTests 14 dan CheckInTransactionsTests 3 lulus, termasuk batas waktu, kepemilikan/peran, CSRF, aksi berulang, persaingan transaksi dan rollback. Tes profil default/demo, enam akun sintetis, login empat peran, penolakan lintas peran dan seed/migrasi berulang juga lulus melalui H2/MockMvc; ini bukan hasil browser |
+| Verify terbatas dan pembuatan JAR | **BUILD SUCCESS: 118 tes, 0 failure/error/skipped**, dengan `-Dtest=!CheckInServletTests,!ServletSecurityTests`. Dua kelas servlet secara eksplisit dikecualikan; hasil ini bukan kelulusan verify lengkap. Executable JAR dibuat ulang. Log `target/uc05-resume-nonservlet-verify.log` |
+| Startup JAR profil demo | **Gagal membuka HTTP.** H2 runtime berhasil dimuat, Flyway V1/V2 diterapkan dan Hibernate validate berjalan; Tomcat kemudian gagal membuka selector loopback dengan izin koneksi ditolak. Log `target/uc05-resume-startup.log`. Tidak menyatakan login/seed melalui JAR berhasil pada sesi ini |
+| Browser desktop/mobile dan JavaScript | Koneksi Edge tersedia kembali. Upaya membuka aplikasi menghasilkan connection refused karena server tidak hidup. Fixture UI sementara juga gagal startup pada batas loopback yang sama. Tidak ada hasil visual, polling, sticky button atau interaksi kartu yang dinyatakan lulus |
+| Berkas pribadi dan whitespace | Hash `.env` tetap sama dengan catatan sebelum pekerjaan (`B497017D...EF7B42`); hash file tambahan lokal tetap `9864E33D...C50769`. `git diff --check` lulus |
+
+Hasil sukses 120 tes dan HTTP pada bagian riwayat di bawah tetap merupakan hasil sesi sebelumnya. Hasil terbaru di atas tidak menggantikannya dengan klaim sukses baru. Langkah berikut: jalankan verify lengkap dan smoke JAR dari terminal lokal yang mengizinkan loopback, lalu cek UC-05 desktop/mobile (sukses, penolakan, polling dan tutup/pulihkan peringatan). Runtime Java 21/CI UC-05 tetap belum diverifikasi di sesi ini. Setelah review selesai, Jefry memindahkan working tree ke branch UC-05 dan melakukan integrasi; UC-06 baru dimulai sesudah itu. DB-01 tetap menunggu QA-01 lulus dan masuk main.
+
+Perubahan sesi lanjutan: PROGRESS.md dan penjelasan fallback pada SETUP.md. Daftar implementasi UC-05 serta usulan commit tetap pada bagian berikut. Tidak ada proses server UI yang dibiarkan berjalan setelah startup gagal.
+
+## Riwayat implementasi UC-05 sebelum verifikasi ulang
+
+Branch tujuan: `feat/uc-05-check-in`. Branch aktual sesi: `feat/uc-04-batal-antrean` pada `830c6a0`. PR [#10](https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana/pull/10) terkonfirmasi merged ke main (`a90723d`) dan Java CI UC-04 sukses. Perbandingan isi kedua commit melalui GitHub menghasilkan daftar berkas kosong. Perubahan tracked awal bersih; satu file tambahan lokal tak dilacak pada root dengan nama diawali `tration and restore quota atomically` dipertahankan dan hash akhirnya tetap sama. File tersebut tidak termasuk perintah staging yang disarankan. Main lokal belum diperbarui; pembuatan branch UC-05 ditolak karena `.git` hanya baca di sesi agent. Tidak ada commit/push/PR/merge oleh agent; `.env` tidak diubah.
+
+### UC-05 - implementasi dan verifikasi sesi sebelumnya
+
+Acuan dibaca: Modul 2 revisi UC-05 hlm. 7-8, PC-05 hlm. 89-91, UI-05 hlm. 105; design context/screenshot Figma desktop `89:579`, mobile `89:597` dan peringatan loket `93:737`. Memakai ulang entitas, sesi, layout dan seed sintetis.
+
+- CheckInPolicy dipakai bersama oleh kelayakan UC-03 dan penulisan UC-05: Terdaftar, waktuCheckIn null, hari sama, >= 30 menit sebelum mulai dan <= jam selesai. Kedua batas inklusif; jendela yang secara aritmetika mulai pada hari sebelumnya tetap menolak check-in beda hari.
+- CheckInService membaca ID jadwal skalar milik pasien sesi, mengunci JadwalPraktik lalu Antrean, memeriksa ulang pemilik/jadwal/status/waktu tersimpan, kemudian membaca Clock server. Satu transaksi mengubah Hadir/Menunggu dan menyimpan waktuCheckIn. Ulang ditolak tanpa menimpa waktu pertama. Kuota, nomor, tanggal booking dan waktu selesai tetap.
+- Halaman `/pasien/check-in` memilih tiket Terdaftar hari ini atau menampilkan keadaan kosong. Detail/POST `/pasien/antrean/{id}/check-in`, hasil `/hasil`, JSON `/data`. GET tidak menulis data; POST memakai CSRF dan identitas sesi, mengabaikan ID pasien/jadwal/waktu dari klien. Sukses 303, input tidak valid 400, tiket bukan milik pasien/tidak ada 404, peran lain 403, syarat gagal 409, gangguan DB 503 tanpa rincian koneksi.
+- Halaman menampilkan nomor/status/jadwal, jendela check-in, tahap kehadiran dan waktu server/kehadiran. Tindakan mobile dirancang tetap di bawah layar. Polling 5 detik, timeout 8 detik, refresh manual dan penanda data lama; submit dinonaktifkan saat data belum segar. Tanpa JavaScript gunakan reload.
+- LoketCheckInService menyediakan `/loket/check-in` dan `/data` hanya untuk PETUGAS_LOKET, dengan pemeriksaan peran di layanan. Definisi operasional mendekati giliran karena modul tidak memberi angka: dua nomor aktif terdepan yang belum Sedang Dilayani pada jadwal hari ini selama jendela terbuka; peringatan hanya untuk Terdaftar yang waktuCheckIn masih null. Hadir/Menunggu/Menunggu/Dilewati tetap menempati posisi. Peringatan membawa nomor/jadwal tanpa identitas/ID tiket pasien lain.
+- Peringatan dibaca ulang dan hilang setelah kehadiran tercatat. Tutup peringatan hanya menyembunyikan kartu lokal, tanpa mutasi server. Tidak membuat panggilan, pelewatan, notifikasi UC-10, skema/migrasi baru, atau perubahan seed/login. UC-06 masih menunggu tahap ini diverifikasi dan masuk main.
+
+| Pemeriksaan UC-05 | Hasil aktual |
+| --- | --- |
+| Maven Wrapper Windows 3.9.16 offline verify | **BUILD SUCCESS, 120 tes, 0 gagal/error/skipped**: 102 regresi + 14 CheckInTests + 3 CheckInTransactionsTests + 1 CheckInServletTests. JDK 24.0.2, compile release 21, Mockito Java agent cache. `target/uc05-verify.log` |
+| Git Bash verify | Terhalang sebelum Maven oleh MSYS `NtCreateDirectoryObject ... 0xC0000022`. Fallback Wrapper Windows di atas lulus; `target/uc05-bash-verify.log` |
+| Aturan dan transaksi H2 | Lulus: kedua batas inklusif, di luar rentang/beda hari, status/timestamp tidak valid, validasi ulang sesudah preview, pemilik/peran/CSRF, spoofing input, kuota/nomor/tanggal booking tidak berubah, dua thread menghasilkan satu check-in, rollback status dan timestamp lalu retry berhasil |
+| HTTP servlet dengan Clock tes | Lulus: Tomcat pada port acak, login/CSRF, check-in sukses, hasil Hadir/Menunggu dengan waktu 08:00, replay ditolak dan waktu pertama tetap. Database H2 khusus terpisah |
+| Startup executable JAR dengan waktu nyata | Dua startup baru lulus: enam akun/peran/CSRF/logout, UC-01 sampai UC-05. Saat dijalankan di luar jendela, check-in hari ini/tiket besok ditolak dan status/waktu tidak berubah. `target/uc05-smoke.log`; pengulangan JAR terakhir dicatat di `target/uc05-smoke-final.log` |
+| HTTP fixture runtime terkontrol | Lulus: peringatan JDW-003/001 ada sebelum check-in, lalu hilang; status Hadir/Menunggu dan waktu 2026-11-27 08:00:00 tersimpan, replay ditolak, kuota tetap 9. `target/uc05-controlled-http.log` |
+| Package setelah penyempurnaan HTML/CSS/JavaScript | BUILD SUCCESS; `target/uc05-package-final.log`. Package tidak menjalankan ulang tes Java; 120 hasil verify di atas terpisah |
+| Browser desktop/mobile dan interaksi JavaScript | **Belum terverifikasi.** Kontrol browser gagal sebelum tab dibuat karena native pipe tidak tersedia. Dicoba ulang setelah Jefry menyambungkan ulang, masih gagal. Tidak ada klaim screenshot, tombol sticky, polling atau interaksi kartu sudah lulus browser |
+| Sintaks JavaScript/Python, whitespace, berkas pribadi | node --check, py_compile dan git diff --check lulus; hash `.env` dan file tambahan lokal sebelum/sesudah sama |
+
+Clock terkendali hanya digunakan konfigurasi tes dan helper Java sementara di target. Helper browser/runtime HTTP memulai kelas aplikasi dengan Clock 08:00 dan fixture jadwal sintetis; bukan opsi pada JAR demo normal dan bukan bukti visual browser. Tidak menambah endpoint untuk mengubah status/waktu atau melewati aturan. Tes core di-rollback, fixture transaksi/servlet dibersihkan; proses helper telah dihentikan. Tidak ada perubahan MySQL/Supabase.
+
+Keterbatasan review: pemeriksaan visual desktop/mobile dan interaksi JavaScript masih perlu dilakukan setelah kontrol browser pulih. Lima unduhan SVG Figma timeout; tidak memasang aset kosong atau URL sementara. Struktur kartu memakai token/layout dan font fallback fondasi; kesesuaian penuh ikon/font/layout bersama belum tercapai. Runtime JDK 21 dan CI UC-05 belum dijalankan dari sesi ini. Status review bukan klaim seluruh pemeriksaan selesai; UC-06 tetap menunggu verifikasi dan integrasi UC-05.
+
+Daftar berkas UC-05: boundary/CheckInBoundary.java dan StatusAntreanBoundary.java; controller/CheckInService.java, CheckInPolicy.java, CheckInException.java, LoketCheckInService.java dan StatusAntreanService.java; repository/AntreanRepository.java; templates/checkin/index.html dan loket.html; templates/index.html dan antreanpasien/status.html; static/js/check-in.js; static/css/app.css; CheckInTests.java, CheckInTransactionsTests.java dan CheckInServletTests.java; scripts/smoke_demo.py; README.md; SETUP.md; docs/KONTRAK.md; PROGRESS.md.
+
+Sebelum commit, Jefry dapat membawa working tree ke branch tujuan dengan `git fetch origin` lalu `git switch --no-track -c feat/uc-05-check-in origin/main`. Untuk mengecualikan file tambahan lokal, stage hanya `PROGRESS.md README.md SETUP.md docs/KONTRAK.md scripts/smoke_demo.py src`, lalu tinjau `git diff --cached`. Usulan commit: `feat(uc-05): add patient check-in and counter alerts`. Commit, pemeriksaan `git log -1 --format=fuller`, push, PR dan merge tetap oleh Jefry. Selesaikan cek visual yang tertunda sebelum menutup tahap dan lanjut UC-06.
+
+## Riwayat UC-04 sebelum integrasi
 
 Branch tujuan: `feat/uc-04-batal-antrean`. Branch aktual sesi: `feat/uc-03-status-antrean` pada `1aea612`; working tree awal bersih. PR [#9](https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana/pull/9) terkonfirmasi merged ke main (`a448c7f`), dan Java CI UC-03 sukses. Perbandingan 1aea612 dengan merge a448c7f melalui GitHub menghasilkan daftar berkas kosong; baseline lokal sesuai hasil integrasi. Main lokal belum diperbarui. Pembuatan branch UC-04 ditolak karena `.git` hanya baca di sesi agent. Perubahan tetap dipertahankan di working tree untuk dipindahkan Jefry sebelum commit. Tidak ada commit/push/PR/merge oleh agent; `.env` tetap utuh.
 
-## UC-04 - implementasi dan verifikasi terbaru
+### Implementasi dan verifikasi UC-04
 
 Acuan dibaca: Modul 2 revisi UC-04 hlm. 6-7, PC-04 hlm. 89, UI-04 hlm. 103, serta design context/screenshot Hi-Fi RSI frame `111:1005`. Kelayakan mengikuti kontrak bersama untuk empat status aktif, termasuk Dilewati, ketika teks prasyarat UC lama berbeda.
 
@@ -185,8 +245,8 @@ Langkah lokal berikutnya di CMD: `mvnw.cmd --batch-mode --no-transfer-progress v
 | UC-01 | done | 59 tes lulus, smoke/browser diperiksa; PR #7 merged ke main |
 | UC-02 | done | 72 tes lulus; dua startup JAR/HTTP dan browser lulus; PR #8 merged ke main, CI sukses |
 | UC-03 | done | 86 tes lulus, dua startup JAR/HTTP dan browser lulus; PR #9 merged, CI sukses |
-| UC-04 | review | 102 tes lulus; dua startup JAR/HTTP dan browser lulus; review, commit dan integrasi oleh Jefry |
-| UC-05 | todo | Setelah UC-04 masuk main |
+| UC-04 | done | 102 tes lulus, dua startup JAR/HTTP dan browser lulus; PR #10 merged, CI sukses |
+| UC-05 | review | 120 tes dan startup/HTTP lulus; cek visual desktop/mobile tertunda karena koneksi browser |
 | UC-06 | todo | Setelah UC-05 masuk main |
 | UC-07 | todo | Setelah UC-06 masuk main |
 | UC-08 | todo | Setelah UC-07 masuk main |
@@ -195,7 +255,7 @@ Langkah lokal berikutnya di CMD: `mvnw.cmd --batch-mode --no-transfer-progress v
 | QA-01 | todo | Seluruh UC terintegrasi; regresi lintas peran di H2 |
 | DB-01 | todo | QA-01 lulus dan masuk main; PostgreSQL Supabase |
 
-UI-01 sampai UI-03 terintegrasi; UI-04 diimplementasikan untuk review; UI-05 sampai UI-10 belum diimplementasikan. Label pemilik MF/RA/NA/AH pada kartu lama adalah asal spesifikasi; Jefry mengerjakan semua tahap. Detail branch/UC/PC/UI ada di [roadmap](docs/PROJECT.md).
+UI-01 sampai UI-04 terintegrasi; UI-05 diimplementasikan untuk review dengan cek visual tertunda; UI-06 sampai UI-10 belum diimplementasikan. Label pemilik MF/RA/NA/AH pada kartu lama adalah asal spesifikasi; Jefry mengerjakan semua tahap. Detail branch/UC/PC/UI ada di [roadmap](docs/PROJECT.md).
 
 ## Perubahan SETUP-00 H2
 

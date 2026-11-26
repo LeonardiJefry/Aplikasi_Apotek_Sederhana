@@ -215,6 +215,51 @@ def check_cancellation(base, password):
     print("PASS UC-04: explicit confirmation, CSRF, ownership, cancellation, one quota refund, replay rejection and UC-01/03 updates")
 
 
+def check_check_in(base, password):
+    browser = client()
+    login(browser, base, "pasien", password)
+    url = "/pasien/antrean/ANT-DEMO0006/check-in"
+    _, _, page = expect_status(request(browser, base, url), 409, "Future-day check-in rejected")
+    token = csrf(page)
+    expect_status(request(browser, base, url, {}), 403, "Check-in requires CSRF")
+    expect_status(request(browser, base, url, {"_csrf": token}), 409, "Future-day POST rejected")
+    expect_status(request(browser, base, url + "/hasil"), 409, "Check-in result cannot claim false success")
+    _, _, body = expect_status(request(browser, base, url + "/data"), 200, "Read future check-in window")
+    future = json.loads(body)["tiket"]
+    assert future["statusAntrean"] == "Terdaftar" and future["waktuCheckIn"] is None and not future["bolehCheckIn"]
+    other = client()
+    login(other, base, "pasien2", password)
+    expect_status(request(other, base, url + "/data"), 404, "Other patient cannot read check-in")
+    own_url = "/pasien/antrean/ANT-DEMO0005/check-in"
+    _, _, body = expect_status(request(other, base, own_url + "/data"), 200, "Today's check-in window")
+    today = json.loads(body)["tiket"]
+    code, _, own_page = request(other, base, own_url)
+    assert code in (200, 409)
+    form = {"_csrf": csrf(own_page), "idPasien": "PAS-001", "waktuCheckIn": "2000-01-01T00:00:00"}
+    code, _, _ = request(other, base, own_url, form)
+    assert code in (303, 409), f"Unexpected check-in response {code}"
+    _, _, body = expect_status(request(other, base, own_url + "/data"), 200, "Check-in state after request")
+    after = json.loads(body)["tiket"]
+    assert after["jadwal"]["sisaKuota"] == today["jadwal"]["sisaKuota"]
+    if code == 303:
+        assert after["statusAntrean"] == "Hadir/Menunggu" and after["waktuCheckIn"]
+        expect_status(request(other, base, own_url, form), 409, "Repeated check-in rejected")
+        print("PASS UC-05 real clock: check-in succeeded within today's window")
+    else:
+        assert after["statusAntrean"] == "Terdaftar" and after["waktuCheckIn"] is None
+        assert not after["bolehCheckIn"], "A valid open-window check-in must succeed"
+        print("PASS UC-05 real clock: today's window closed; status and timestamp unchanged")
+    loket = client()
+    login(loket, base, "loket", password)
+    expect_status(request(loket, base, "/loket/check-in"), 200, "Counter warning page")
+    _, headers, body = expect_status(request(loket, base, "/loket/check-in/data"), 200, "Counter warning snapshot")
+    assert isinstance(json.loads(body)["peringatan"], list) and headers.get("Cache-Control") == "no-store"
+    assert not any(key in body for key in ('"idPasien":', '"idAntrean":', '"nik":', '"noRekamMedis":'))
+    expect_status(request(browser, base, "/loket/check-in/data"), 403, "Patient cannot read counter warnings")
+    expect_status(request(loket, base, url + "/data"), 403, "Counter cannot read patient's check-in")
+    print("PASS UC-05: real-time window, CSRF, ownership, no quota change and counter warnings")
+
+
 def main():
     if len(sys.argv) != 2:
         raise SystemExit("Usage: python scripts/smoke_demo.py PATH_TO_BOOT_JAR")
@@ -257,6 +302,7 @@ def main():
                 check_schedule(base, password)
                 check_booking(base, password)
                 check_queue_status(base, password)
+                check_check_in(base, password)
                 check_cancellation(base, password)
                 print(f"PASS demo startup {run}: fresh working directory, H2, synthetic accounts")
             finally:

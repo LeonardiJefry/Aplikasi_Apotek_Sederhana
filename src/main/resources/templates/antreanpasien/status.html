@@ -50,7 +50,7 @@
           <a id="queue-checkin" class="button primary queue-action" th:href="${d.bolehCheckIn} ? @{/pasien/antrean/{id}/check-in(id=${d.idAntrean})} : null" th:attr="aria-disabled=${!d.bolehCheckIn},tabindex=${d.bolehCheckIn ? 0 : -1}">Check-in</a>
           <a id="queue-cancel" class="button outline queue-action" th:href="${d.bolehBatal} ? @{/pasien/antrean/{id}/pembatalan(id=${d.idAntrean})} : null" th:attr="aria-disabled=${!d.bolehBatal},tabindex=${d.bolehBatal ? 0 : -1}">Batalkan Antrean</a>
         </div>
-        <p class="help">Pembatalan memerlukan waktu lebih dari 60 menit sebelum praktik dan konfirmasi Anda. Check-in tersedia pada hari kunjungan dari 30 menit sebelum mulai sampai jam selesai; untuk sementara hubungi petugas loket untuk check-in.</p>
+        <p class="help">Pembatalan memerlukan waktu lebih dari 60 menit sebelum praktik dan konfirmasi Anda. Check-in mandiri tersedia untuk tiket Terdaftar pada hari kunjungan dari 30 menit sebelum mulai sampai jam selesai.</p>
       </div>
       <div class="schedule-refresh"><p id="queue-refresh-state" class="help" role="status" aria-live="polite" th:text="${'Diperbarui ' + snapshot.diperbaruiPada + ' WIB'}"></p><button type="button" id="queue-refresh" class="outline" hidden>Perbarui sekarang</button></div>
       <noscript><p class="alert">Muat ulang halaman untuk melihat status terbaru.</p></noscript>

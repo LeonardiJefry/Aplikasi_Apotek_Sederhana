@@ -31,7 +31,7 @@ Password demo lokal: `demo-klinik-2026`. Ini fixture publik sintetis. Untuk meng
 | `mysql` (opsional historis) | Membaca `.env` lama; tidak dibutuhkan dalam alur harian/CI |
 | Supabase | Belum diimplementasikan; DB-01 setelah QA-01 lulus dan masuk main |
 
-SETUP-00 sampai UC-03 terintegrasi melalui PR #6 sampai #9. Login sebagai pasien, buka `/pasien/jadwal`, pilih tanggal serta poli/dokter, lalu Pilih Jadwal untuk ringkasan dan konfirmasi booking. Untuk percobaan di luar jam praktik, pilih besok dan Poli Umum. **Antrean Saya** pada `/pasien/antrean` menampilkan tiket sendiri dan status yang diperbarui otomatis. UC-04 menambahkan pembatalan dengan modal konfirmasi: hanya dari status yang diizinkan dan lebih dari 60 menit sebelum praktik, dengan pengembalian satu kuota secara atomik. Check-in mandiri menunggu UC-05; UI-05 sampai UI-10 belum diimplementasikan. Lihat [PROGRESS.md](PROGRESS.md) untuk status review/verifikasi aktual, [SETUP.md](SETUP.md) untuk langkah lengkap, [roadmap](docs/PROJECT.md), [kontrak](docs/KONTRAK.md), serta [arsitektur BCE](docs/ARSITEKTUR.md).
+SETUP-00 sampai UC-04 terintegrasi melalui PR #6 sampai #10. Login sebagai pasien, buka `/pasien/jadwal`, pilih tanggal serta poli/dokter, lalu Pilih Jadwal untuk booking. **Antrean Saya** menampilkan status dan pembatalan. UC-05 menambahkan **Check-in hari ini**: tiket Terdaftar pada hari kunjungan dapat menjadi Hadir/Menunggu, dari 30 menit sebelum mulai sampai jam selesai, tanpa mengubah kuota. Loket memiliki **Peringatan Check-in** untuk pasien yang mendekati giliran. UI-06 sampai UI-10 menunggu tahap berikutnya. Lihat [PROGRESS.md](PROGRESS.md) untuk status review/verifikasi aktual, [SETUP.md](SETUP.md) untuk langkah lengkap, [roadmap](docs/PROJECT.md), [kontrak](docs/KONTRAK.md), serta [arsitektur BCE](docs/ARSITEKTUR.md).
 
 ## Pemeriksaan
 
@@ -40,10 +40,10 @@ SETUP-00 sampai UC-03 terintegrasi melalui PR #6 sampai #9. Login sebagai pasien
 python scripts/smoke_demo.py target/apotek-0.0.1-SNAPSHOT.jar
 ```
 
-`verify` menjalankan tes migrasi, constraint, login, peran, CSRF, kepemilikan, jadwal, booking, status antrean, pembatalan, perebutan slot, submit bersamaan, batas waktu dan rollback, lalu membuat JAR. Skrip Python standar memulai JAR dari folder sementara tanpa `.env`, memeriksa enam akun sintetis, akses lintas peran, password salah, CSRF, logout dan UC-01 sampai UC-04, kemudian mengulangi startup di JVM baru. CI menjalankan kedua perintah dengan JDK 21 tanpa service database. Skrip HTTP ini melengkapi pemeriksaan visual browser.
+`verify` menjalankan tes migrasi, constraint, login, peran, CSRF, kepemilikan, UC-01 sampai UC-05, submit bersamaan, batas waktu dan rollback, lalu membuat JAR. Tes check-in juga memakai HTTP Tomcat sungguhan dengan Clock terkendali. Skrip Python standar memulai JAR dari folder sementara tanpa `.env`, memeriksa enam akun sintetis dan UC-01 sampai UC-05, kemudian mengulangi startup di JVM baru. Check-in pada skrip JAR mengikuti waktu server sebenarnya: di luar jendela, penolakan dan tidak berubahnya data yang diverifikasi. CI menjalankan kedua perintah dengan JDK 21 tanpa service database. Skrip HTTP melengkapi pemeriksaan visual browser.
 
 ## Cara kerja
 
-Satu tahap per branch sesuai [roadmap](docs/PROJECT.md). Pertahankan perubahan lokal; Jefry melakukan commit, push, PR dan merge. UC-04 dikerjakan setelah UC-03 masuk main melalui PR #9. UC-05 menunggu UC-04 direview dan diintegrasikan. Status working tree belum berarti perubahan telah terintegrasi. Ikuti [CONTRIBUTING.md](CONTRIBUTING.md).
+Satu tahap per branch sesuai [roadmap](docs/PROJECT.md). Pertahankan perubahan lokal; Jefry melakukan commit, push, PR dan merge. UC-05 dikerjakan setelah UC-04 masuk main melalui PR #10. UC-06 menunggu UC-05 direview dan diintegrasikan. Status working tree belum berarti perubahan telah terintegrasi. Ikuti [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Migrasi MySQL historis V1/V2 tetap utuh. Pada H2, placeholder opsi engine/kolasi dikosongkan dan Hibernate memakai `ddl-auto=validate`. Migrasi PostgreSQL khusus disiapkan pada DB-01 di lokasi terpisah.

@@ -57,9 +57,8 @@ public class StatusAntreanService {
         var mulai = jadwal.getTanggal().atTime(jadwal.getJamMulai());
         var selesai = jadwal.getTanggal().atTime(jadwal.getJamSelesai());
         boolean batal = PembatalanPolicy.boleh(ticket.getStatusAntrean(), now, mulai);
-        boolean checkIn = ticket.getStatusAntrean().equals("Terdaftar")
-                && now.toLocalDate().equals(jadwal.getTanggal())
-                && !now.isBefore(mulai.minusMinutes(30)) && !now.isAfter(selesai);
+        boolean checkIn = CheckInPolicy.boleh(ticket.getStatusAntrean(), ticket.getWaktuCheckIn(), now,
+                jadwal.getTanggal(), jadwal.getJamMulai(), jadwal.getJamSelesai());
         return new Detail(ticket.getIdAntrean(), ticket.getNomorAntrean(), ticket.getStatusAntrean(),
                 JadwalDto.from(jadwal), sekarang, depan, berikut, akhir, batal, checkIn,
                 keterangan(ticket.getStatusAntrean()));
