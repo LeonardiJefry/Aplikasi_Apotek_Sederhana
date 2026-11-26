@@ -1,5 +1,7 @@
 # NA · Muhammad Naufal Alfarrel
 
+> Roadmap mandiri: Jefry (JL) mengerjakan UC-05/06. Nama NA dipertahankan sebagai rujukan rancangan. Gunakan H2 demo/test dan urutan [roadmap](../PROJECT.md); catat hasil di [PROGRESS.md](../../PROGRESS.md).
+
 Pemilik check-in pasien dan proses pemanggilan loket. Rujukan Modul 2 UC-05/06, PC-05/06 dan UI-05/06, serta Modul 3 NA–SC03 (hlm. 18–25).
 
 | Issue | Branch | Modul yang dikerjakan |

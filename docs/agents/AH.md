@@ -1,5 +1,7 @@
 # AH · Affan Herlino Tazakha Wijaya
 
+> Roadmap mandiri: Jefry (JL) mengerjakan UC-09/10. Nama AH dipertahankan sebagai rujukan rancangan. Gunakan H2 demo/test dan urutan [roadmap](../PROJECT.md); catat hasil di [PROGRESS.md](../../PROGRESS.md).
+
 Pemilik dashboard dokter, penyelesaian pemeriksaan, dan notifikasi loket. Rujukan Modul 2 UC-09/10, PC-09/10 dan UI-09/10, serta Modul 3 AH–SC05 (hlm. 29–34).
 
 | Issue | Branch | Modul yang dikerjakan |

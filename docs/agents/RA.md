@@ -1,5 +1,7 @@
 # RA · Rakha Ahmad Fabiano
 
+> Roadmap mandiri: Jefry (JL) mengerjakan UC-03/04. Nama RA dipertahankan sebagai rujukan rancangan. Gunakan H2 demo/test dan urutan [roadmap](../PROJECT.md); catat hasil di [PROGRESS.md](../../PROGRESS.md).
+
 Pemilik status antrean pasien dan pembatalan. Rujukan Modul 2 UC-03/04, PC-03/04 dan UI-03/04, serta Modul 3 RA–SC02 (hlm. 14–17).
 
 | Issue | Branch | Modul yang dikerjakan |
