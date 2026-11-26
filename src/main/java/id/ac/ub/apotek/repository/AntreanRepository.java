@@ -4,6 +4,10 @@ import id.ac.ub.apotek.entity.Antrean;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AntreanRepository extends JpaRepository<Antrean, String> {
+    @org.springframework.data.jpa.repository.Query("select a.jadwal.idJadwal from Antrean a where a.idAntrean = :id and a.pasien.idPasien = :pasien")
+    java.util.Optional<String> jadwalTiketPasien(@org.springframework.data.repository.query.Param("id") String id,
+            @org.springframework.data.repository.query.Param("pasien") String idPasien);
+
     @org.springframework.data.jpa.repository.Query("""
             select a from Antrean a join fetch a.jadwal j join fetch j.dokter join fetch j.poli
             where a.pasien.idPasien = :pasien

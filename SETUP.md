@@ -115,7 +115,7 @@ Seed MySQL hanya aktif jika `DEMO_ENABLED=true` dan `DEMO_PASSWORD` valid di `.e
 
 DB-01 baru dibuka setelah QA-01 lulus dan masuk main. Siapkan driver/profil PostgreSQL Supabase serta lokasi migrasi PostgreSQL terpisah. Audit tipe SQL, ekspresi NIK, casing identifier, timezone, constraint dan transaksi dari seluruh UC. Belum ada koneksi, migrasi PostgreSQL, atau kredensial Supabase yang dipasang pada SETUP-00.
 
-Login/layout tetap memakai token Design System Hi-Fi RSI yang sudah diterapkan. UC-01 tersedia seperti bagian 7, UC-02 seperti bagian 8 dan UC-03 seperti bagian 9; UI-04 sampai UI-10 menunggu tahap fitur. Font Poppins memakai fallback bila belum tersedia. Model tetap di `id.ac.ub.apotek.entity` dan repository di `id.ac.ub.apotek.repository`; jangan menduplikasi model.
+Login/layout tetap memakai token Design System Hi-Fi RSI yang sudah diterapkan. UC-01 sampai UC-04 tersedia seperti bagian 7-10; UI-05 sampai UI-10 menunggu tahap fitur. Font Poppins memakai fallback bila belum tersedia. Model tetap di `id.ac.ub.apotek.entity` dan repository di `id.ac.ub.apotek.repository`; jangan menduplikasi model.
 
 ## 7. Mencoba UC-01 — jadwal praktik dan sisa kuota
 
@@ -149,9 +149,23 @@ Login `pasien2`, klik **Antrean Saya** pada beranda, atau buka `/pasien/antrean`
 - Pada dataset demo baru, pilih tiket ANT-DEMO0004: nomor sendiri 004, status Menunggu, nomor sedang dilayani 001, dan 3 orang di depan pada JDW-001. Hitungan berasal dari entri aktif bernomor lebih kecil, termasuk yang sedang dilayani dan Dilewati; nomor berstatus Selesai/Dibatalkan/Tidak Hadir tidak dihitung. Ini bukan pengurangan dua nomor.
 - Tiket ANT-DEMO0005 pada jadwal dokter lain menampilkan belum ada nomor sedang dilayani dan 0 orang di depan. ANT-DEMO0008/0009 memperlihatkan status akhir, tanpa posisi menunggu. Belum memiliki tiket menampilkan ajakan melihat jadwal.
 - Halaman membaca ulang snapshot setiap 5 detik; tombol **Perbarui sekarang** tersedia jika JavaScript aktif. Tanpa JavaScript, muat ulang halaman. Saat koneksi gagal, data terakhir ditandai belum diperbarui dan tautan tindakan dinonaktifkan sampai snapshot segar diperoleh.
-- Klik Check-in atau Batalkan Antrean hanya jika syarat waktu/status terpenuhi. Saat UC-03, tautannya adalah informasi layanan baca-saja yang mengarahkan ke loket. Tidak menulis status atau kuota. Transaksi mandiri baru dikerjakan pada UC-04/05. Status akhir dan tiket sedang dilayani tidak mengaktifkan keduanya.
+- Klik Batalkan Antrean jika syarat waktu/status terpenuhi untuk membuka UC-04; GET tidak menulis data dan konfirmasi akhir memakai POST. Check-in masih informasi baca-saja yang mengarahkan ke loket sampai UC-05. Status akhir dan tiket sedang dilayani tidak mengaktifkan keduanya.
 - Akses tiket pasien lain menghasilkan 404 baik HTML maupun JSON, sedangkan akun admin/loket/dokter mendapat 403. Snapshot tidak menampilkan nama, noRM, NIK, ID pasien atau ID tiket orang lain; daftar antrean sesi hanya membawa nomor dan status.
 
 Daftar antrean berikutnya dibatasi lima nomor aktif, diurutkan menurut nomor. Nomor Dilewati bisa tetap muncul; keputusan panggilan ulang mengikuti petugas/UC-06. Jika data memuat beberapa tiket Sedang Dilayani, seluruh nomornya ditampilkan. Belum ada asumsi menit per pasien, sehingga estimasi waktu ditampilkan sebagai tanda pisah dan diberi keterangan belum tersedia.
 
 StatusAntreanTests memeriksa seluruh status, hitungan dengan nomor berlubang, pemisahan sesi/dokter/tanggal, perubahan status, daftar kosong, batas lima nomor, privasi dan kepemilikan, kesalahan 503, akses peran, batas pembatalan 61/60 menit serta batas check-in inklusif. Acuan: Modul 2 UC-03 hlm. 5-6, PC-03 hlm. 88-89, UI-03 hlm. 101; Hi-Fi RSI `111:777`. Hasil browser/startup dan keterbatasan visual aktual dicatat di PROGRESS.md.
+
+## 10. Mencoba UC-04 - pembatalan pendaftaran antrean
+
+1. Mulai proses demo baru, login `pasien`, buka Antrean Saya dan pilih ANT-DEMO0006 untuk jadwal besok. Tiket ini Terdaftar, sisa kuota JDW-003 adalah 9/10 pada fixture awal.
+2. Klik **Batalkan Antrean** untuk membuka detail dan informasi syarat. Klik tombol merah **Batalkan Antrean** untuk memunculkan modal **Batalkan Antrean?**. Pilih **Kembali** atau tekan Escape: modal tertutup dan pendaftaran/kuota tetap sama. Membuka halaman atau modal tidak membatalkan tiket.
+3. Buka modal lagi lalu klik **Ya, Batalkan**. Hasil menampilkan pesan berhasil, status Dibatalkan dan kuota 10/10. Klik **Kembali ke Status Antrean** dan **Lihat Kuota Jadwal** untuk memeriksa pembaruan UC-03/01.
+4. Membuka ulang hasil pembatalan tidak mengubah data. Pengiriman ulang POST/form lama ditolak 409 dan tidak menambah kuota lagi. Tiket Selesai/Tidak Hadir/Sedang Dilayani juga tidak bisa dibatalkan.
+5. Buka URL pembatalan yang sama sebagai `pasien2`: hasil 404. Akun loket/admin/dokter mendapat 403. CSRF dan persetujuan `konfirmasi=ya` wajib pada POST; identitas pasien dari sesi, jadwal dari tiket server.
+
+Status yang boleh dibatalkan adalah Terdaftar, Menunggu, Hadir/Menunggu dan Dilewati. Waktu tersisa harus **lebih dari 60 menit** terhadap jam mulai, diperiksa lagi setelah kunci jadwal/tiket diperoleh. Tes Clock terkendali memeriksa 61 menit berhasil, tepat 60 menit dan kurang ditolak, termasuk ringkasan lama yang melewati batas saat dikirim. Tidak mengganti jam komputer untuk tes manual.
+
+Pembatalan mengunci JadwalPraktik lalu Antrean seperti booking, mengubah status dan mengembalikan satu kuota pada transaksi yang sama. Tes H2 dua thread memeriksa pembatalan ganda, dua pembatalan berbeda dan booking yang bersaing dengan pembatalan. Trigger kegagalan UPDATE kuota membuktikan rollback status serta retry yang aman. Kuota yang sudah mencapai kapasitas menyebabkan penolakan seluruh operasi, bukan pengembalian tambahan.
+
+Tanpa JavaScript atau dukungan dialog native, formulir konfirmasi tampil langsung dan tetap memerlukan tombol Ya, Batalkan. Keberhasilan baru ditampilkan setelah transaksi selesai; halaman hasil membaca status dari DB. Kegagalan simpan menampilkan pesan 503 dan jalur kembali untuk mencoba lagi. Seed dan migrasi tetap utuh. Acuan UC-04 hlm. 6-7, PC-04 hlm. 89, UI-04 hlm. 103; Hi-Fi RSI `111:1005`.

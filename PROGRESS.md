@@ -4,11 +4,44 @@ Diperbarui: 26 November 2026 (WIB). PIC seluruh tahap: Jefry (JL).
 
 ## Tahap aktif
 
-**UC-03: review - status antrean pasien siap ditinjau. SETUP-00, UC-01 dan UC-02: done melalui PR #6, #7 dan #8.**
+**UC-04: review - pembatalan antrean pasien siap ditinjau. SETUP-00 sampai UC-03: done melalui PR #6 sampai #9.**
+
+Branch tujuan: `feat/uc-04-batal-antrean`. Branch aktual sesi: `feat/uc-03-status-antrean` pada `1aea612`; working tree awal bersih. PR [#9](https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana/pull/9) terkonfirmasi merged ke main (`a448c7f`), dan Java CI UC-03 sukses. Perbandingan 1aea612 dengan merge a448c7f melalui GitHub menghasilkan daftar berkas kosong; baseline lokal sesuai hasil integrasi. Main lokal belum diperbarui. Pembuatan branch UC-04 ditolak karena `.git` hanya baca di sesi agent. Perubahan tetap dipertahankan di working tree untuk dipindahkan Jefry sebelum commit. Tidak ada commit/push/PR/merge oleh agent; `.env` tetap utuh.
+
+## UC-04 - implementasi dan verifikasi terbaru
+
+Acuan dibaca: Modul 2 revisi UC-04 hlm. 6-7, PC-04 hlm. 89, UI-04 hlm. 103, serta design context/screenshot Hi-Fi RSI frame `111:1005`. Kelayakan mengikuti kontrak bersama untuk empat status aktif, termasuk Dilewati, ketika teks prasyarat UC lama berbeda.
+
+- PembatalanBoundary mengganti sambungan informasi UC-03 pada GET `/pasien/antrean/{id}/pembatalan` dengan detail dan modal konfirmasi. Kembali/Escape menutup modal tanpa menulis data. Tanpa JavaScript/dukungan dialog, formulir konfirmasi tersedia langsung. Tombol Ya, Batalkan mengirim POST dengan CSRF dan persetujuan eksplisit.
+- PembatalanPolicy dipakai bersama oleh tampilan UC-03 dan penyimpanan UC-04: Terdaftar/Menunggu/Hadir/Menunggu/Dilewati, dengan waktu lebih dari 60 menit sebelum jam mulai. Tepat 60 menit/kurang, Sedang Dilayani dan seluruh status akhir ditolak. Server mengambil waktu setelah kunci jadwal/tiket diperoleh.
+- PembatalanService membaca ID jadwal skalar dari tiket milik sesi, lalu mengunci JadwalPraktik dan Antrean dalam urutan yang sama dengan booking. Setelah terkunci, pemilik/jadwal/status/waktu/kapasitas diperiksa ulang. Perubahan Dibatalkan dan pengembalian satu kuota atomik; kegagalan UPDATE kuota me-rollback perubahan status.
+- Submit ulang ditolak 409 tanpa pengembalian kedua. Dua pembatalan berbeda pada sesi sama tidak kehilangan penambahan kuota. Booking yang bersaing dengan pembatalan menjaga kuota dan jumlah tiket aktif tetap konsisten. Jika kuota sudah mencapai kapasitas, seluruh operasi ditolak tanpa mengubah status.
+- Sukses 303 ke halaman hasil yang membaca status DB; hasil sebelum tiket Dibatalkan ditolak 409. Notifikasi keberhasilan adalah pesan layar. Nomor tiket, tanggal booking, waktu check-in/selesai, entitas, seed dan migrasi tetap utuh. Tidak menambah notifikasi loket UC-10.
+- Tiket bukan milik pasien/tidak ada sama-sama 404, ID/konfirmasi tidak valid 400, peran lain 403, syarat gagal 409, gangguan DB 503 tanpa rincian koneksi. Parameter ID pasien/jadwal tambahan tidak digunakan. Seluruh respons pribadi no-store. Link status UC-03 dan kuota UC-01 memperlihatkan hasil terbaru; check-in mandiri tetap menunggu UC-05.
+
+| Pemeriksaan UC-04 | Hasil aktual |
+| --- | --- |
+| Maven Wrapper Windows 3.9.16 offline verify | **BUILD SUCCESS, 102 tes, 0 gagal/error/skipped**: 86 regresi + 12 PembatalanTests + 4 PembatalanTransactionsTests. JDK 24.0.2, compile release 21, Mockito Java agent cache. `target/uc04-verify.log` |
+| Git Bash verify | Terhalang sebelum Maven oleh MSYS `NtCreateDirectoryObject ... 0xC0000022`. Fallback Wrapper Windows di atas lulus; `target/uc04-bash-verify.log` |
+| Aturan dan keamanan | Lulus: 61/60 menit, ringkasan lama melewati batas, seluruh status diizinkan/ditolak, pemilik/peran, CSRF dan konfirmasi, input identitas palsu, kuota penuh, hasil tidak boleh mengklaim sukses sebelum dibatalkan, galat DB 503 |
+| Transaksi H2 nyata | Lulus: pembatalan ganda bersamaan hanya satu berhasil; dua tiket berbeda mengembalikan dua kuota; trigger UPDATE gagal me-rollback status dan retry aman; booking bersamaan pembatalan menjaga invariant |
+| Startup executable JAR dan HTTP | **Lulus dua startup JVM baru** dari folder sementara: enam akun, peran/CSRF/logout, UC-01 sampai UC-04 termasuk replay ditolak dan snapshot status/kuota terbaru. `target/uc04-smoke.log`, log aplikasi `target/demo-smoke-1.log` dan `target/demo-smoke-2.log` |
+| Browser desktop localhost | **Lulus**: pilih tiket besok, detail/modal, Kembali dan Escape tanpa perubahan (kuota tetap 9), Ya Batalkan menghasilkan Dibatalkan dan 10/10, reload hasil tetap 10, link status dan kuota benar, tiket Sedang Dilayani/already cancelled tidak menyediakan konfirmasi, pasien lain tidak dapat membuka tiket dan admin ditolak |
+| Sintaks JavaScript/Python, whitespace, `.env` | Lulus: node --check, py_compile dan git diff --check. Hash SHA-256 `.env` sebelum/sesudah sama |
+
+Tes aturan/MockMvc di-rollback; tes transaksi memakai jadwal/tiket khusus yang dibersihkan. Browser dan smoke memakai H2 proses sementara; seluruh proses sudah dihentikan. Tidak ada perubahan data pribadi, MySQL atau Supabase.
+
+Keterbatasan review: runtime JDK 21 dan CI UC-04 belum dijalankan dari sesi ini. Viewport mobile dan browser dengan JavaScript dinonaktifkan belum diperiksa; fallback konfirmasi diverifikasi lewat HTML/form server. Struktur kartu dan dialog native mengikuti UI-04 dengan layout/font fallback fondasi. Lima unduhan SVG Figma timeout; tidak memasang aset kosong/URL sementara. Ikon, font dan layout bersama belum identik penuh dengan Figma.
+
+Daftar berkas UC-04: boundary/PembatalanBoundary.java dan StatusAntreanBoundary.java; controller/PembatalanService.java, PembatalanPolicy.java, PembatalanException.java dan StatusAntreanService.java; repository/AntreanRepository.java; templates/antreanpasien/pembatalan.html dan status.html; static/js/pembatalan.js; static/css/app.css; PembatalanTests.java, PembatalanTransactionsTests.java dan StatusAntreanTests.java; scripts/smoke_demo.py; README.md; SETUP.md; docs/KONTRAK.md; PROGRESS.md.
+
+Langkah Jefry sebelum commit: `git fetch origin`, kemudian `git switch --no-track -c feat/uc-04-batal-antrean origin/main` untuk membawa working tree ke branch tujuan. Tinjau diff, commit, periksa `git log -1 --format=fuller`, push dan PR ke main. Usulan commit: `feat(uc-04): cancel patient registration and restore quota atomically`. UC-05 menunggu UC-04 terverifikasi dan masuk main.
+
+## Riwayat UC-03 sebelum integrasi
 
 Branch tujuan: `feat/uc-03-status-antrean`. Branch aktual sesi: `feat/uc-02-booking` pada `10d52c6`; working tree awal bersih. PR [#8](https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana/pull/8) sudah merged ke main (`05adc6d`); Java CI pada commit UC-02 juga terkonfirmasi sukses. Perbandingan isi 10d52c6 dengan merge 05adc6d melalui GitHub menghasilkan daftar berkas kosong. Main lokal belum diperbarui. Pembuatan branch UC-03 ditolak karena `.git` hanya baca di sesi agent; perubahan dipertahankan untuk dipindahkan Jefry sebelum commit. Tidak ada commit/push/PR/merge oleh agent.
 
-## UC-03 - implementasi dan verifikasi terbaru
+### Implementasi dan verifikasi UC-03
 
 Acuan dibaca: Modul 2 revisi UC-03 hlm. 5-6, PC-03 hlm. 88-89, UI-03 hlm. 101 dan design context/screenshot Hi-Fi RSI frame `111:777`. Kontrak proyek mengatasi perbedaan istilah status dan rumus selisih nomor pada UC lama: hitungan yang diterapkan adalah jumlah tiket aktif bernomor lebih kecil dalam idJadwal yang sama.
 
@@ -151,8 +184,8 @@ Langkah lokal berikutnya di CMD: `mvnw.cmd --batch-mode --no-transfer-progress v
 | SETUP-00 | done | 46 tes lulus; PR #6 merged ke main |
 | UC-01 | done | 59 tes lulus, smoke/browser diperiksa; PR #7 merged ke main |
 | UC-02 | done | 72 tes lulus; dua startup JAR/HTTP dan browser lulus; PR #8 merged ke main, CI sukses |
-| UC-03 | review | 86 tes lulus; dua startup JAR final/HTTP dan browser lulus; review, commit dan integrasi oleh Jefry |
-| UC-04 | todo | Setelah UC-03 masuk main |
+| UC-03 | done | 86 tes lulus, dua startup JAR/HTTP dan browser lulus; PR #9 merged, CI sukses |
+| UC-04 | review | 102 tes lulus; dua startup JAR/HTTP dan browser lulus; review, commit dan integrasi oleh Jefry |
 | UC-05 | todo | Setelah UC-04 masuk main |
 | UC-06 | todo | Setelah UC-05 masuk main |
 | UC-07 | todo | Setelah UC-06 masuk main |
@@ -162,7 +195,7 @@ Langkah lokal berikutnya di CMD: `mvnw.cmd --batch-mode --no-transfer-progress v
 | QA-01 | todo | Seluruh UC terintegrasi; regresi lintas peran di H2 |
 | DB-01 | todo | QA-01 lulus dan masuk main; PostgreSQL Supabase |
 
-UI-01/02 terintegrasi; UI-03 diimplementasikan untuk review; UI-04 sampai UI-10 belum diimplementasikan. Label pemilik MF/RA/NA/AH pada kartu lama adalah asal spesifikasi; Jefry mengerjakan semua tahap. Detail branch/UC/PC/UI ada di [roadmap](docs/PROJECT.md).
+UI-01 sampai UI-03 terintegrasi; UI-04 diimplementasikan untuk review; UI-05 sampai UI-10 belum diimplementasikan. Label pemilik MF/RA/NA/AH pada kartu lama adalah asal spesifikasi; Jefry mengerjakan semua tahap. Detail branch/UC/PC/UI ada di [roadmap](docs/PROJECT.md).
 
 ## Perubahan SETUP-00 H2
 

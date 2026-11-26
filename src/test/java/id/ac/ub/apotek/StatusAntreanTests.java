@@ -177,7 +177,7 @@ class StatusAntreanTests {
         var patient = session("pasien");
         var info = get("/pasien/antrean/ANT-DEMO0006/pembatalan", patient);
         assertThat(info.getStatus()).isEqualTo(200);
-        assertThat(info.getContentAsString()).contains("Layanan mandiri ini belum tersedia");
+        assertThat(info.getContentAsString()).contains("Batalkan Antrean?", "Ya, Batalkan");
         assertThat(get("/pasien/antrean/ANT-DEMO0001/pembatalan", patient).getStatus()).isEqualTo(409);
         assertThat(get("/pasien/antrean/ANT-DEMO0006/check-in", patient).getStatus()).isEqualTo(409);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM Antrean", Integer.class)).isEqualTo(9);
