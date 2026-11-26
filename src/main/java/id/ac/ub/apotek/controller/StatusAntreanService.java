@@ -56,7 +56,7 @@ public class StatusAntreanService {
                 .map(a -> new Baris(a.getNomorAntrean(), a.getStatusAntrean())).toList();
         var mulai = jadwal.getTanggal().atTime(jadwal.getJamMulai());
         var selesai = jadwal.getTanggal().atTime(jadwal.getJamSelesai());
-        boolean batal = BISA_BATAL.contains(ticket.getStatusAntrean()) && now.plusMinutes(60).isBefore(mulai);
+        boolean batal = PembatalanPolicy.boleh(ticket.getStatusAntrean(), now, mulai);
         boolean checkIn = ticket.getStatusAntrean().equals("Terdaftar")
                 && now.toLocalDate().equals(jadwal.getTanggal())
                 && !now.isBefore(mulai.minusMinutes(30)) && !now.isAfter(selesai);

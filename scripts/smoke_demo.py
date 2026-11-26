@@ -182,6 +182,39 @@ def check_queue_status(base, password):
     print("PASS UC-03: patient tickets, same-session position, serving number, final status, privacy and role rejection")
 
 
+def check_cancellation(base, password):
+    browser = client()
+    login(browser, base, "pasien", password)
+    url = "/pasien/antrean/ANT-DEMO0006/pembatalan"
+    _, _, page = expect_status(request(browser, base, url), 200, "Cancellation preview")
+    assert "Batalkan Antrean?" in page and "Ya, Batalkan" in page
+    expect_status(request(browser, base, url + "/hasil"), 409, "Uncancelled ticket cannot claim success")
+    expect_status(request(browser, base, url, {"konfirmasi": "ya"}), 403, "Cancellation requires CSRF")
+    token = csrf(page)
+    expect_status(request(browser, base, url, {"_csrf": token}), 400, "Explicit cancellation confirmation required")
+    _, _, body = expect_status(request(browser, base, "/pasien/antrean/ANT-DEMO0006/data"), 200, "Status before cancellation")
+    before = json.loads(body)["dipilih"]
+    assert before["statusAntrean"] == "Terdaftar" and before["jadwal"]["sisaKuota"] == 8
+    other = client()
+    login(other, base, "pasien2", password)
+    _, _, other_page = request(other, base, "/login")
+    expect_status(request(other, base, url, {"_csrf": csrf(other_page), "konfirmasi": "ya"}), 404, "Other patient cannot cancel ticket")
+    form = {"_csrf": token, "konfirmasi": "ya", "idPasien": "PAS-002", "idJadwal": "JDW-001"}
+    _, headers, _ = expect_status(request(browser, base, url, form), 303, "Cancel own registration")
+    assert headers["Location"].endswith(url + "/hasil")
+    _, _, result = expect_status(request(browser, base, url + "/hasil"), 200, "Cancellation result")
+    assert "Antrean berhasil dibatalkan" in result
+    expect_status(request(browser, base, url, form), 409, "Repeated cancellation rejected")
+    _, _, body = expect_status(request(browser, base, "/pasien/antrean/ANT-DEMO0006/data"), 200, "Status after cancellation")
+    after = json.loads(body)["dipilih"]
+    assert after["statusAntrean"] == "Dibatalkan" and after["jadwal"]["sisaKuota"] == 9
+    assert not after["bolehBatal"] and after["jumlahDiDepan"] is None
+    query = urllib.parse.urlencode({"tanggal": after["jadwal"]["tanggal"], "idPoli": "POL-001"})
+    _, _, body = expect_status(request(browser, base, "/pasien/jadwal/data?" + query), 200, "Restored quota in UC-01")
+    assert json.loads(body)["jadwal"][0]["sisaKuota"] == 9
+    print("PASS UC-04: explicit confirmation, CSRF, ownership, cancellation, one quota refund, replay rejection and UC-01/03 updates")
+
+
 def main():
     if len(sys.argv) != 2:
         raise SystemExit("Usage: python scripts/smoke_demo.py PATH_TO_BOOT_JAR")
@@ -224,6 +257,7 @@ def main():
                 check_schedule(base, password)
                 check_booking(base, password)
                 check_queue_status(base, password)
+                check_cancellation(base, password)
                 print(f"PASS demo startup {run}: fresh working directory, H2, synthetic accounts")
             finally:
                 process.terminate()

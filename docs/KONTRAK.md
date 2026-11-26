@@ -83,9 +83,23 @@ PIC Jefry. Acuan: UC-03 hlm. 5-6, PC-03 hlm. 88-89, UI-03 hlm. 101 dan Hi-Fi RSI
 - Pembacaan multi-query memakai transaksi read-only REPEATABLE_READ untuk snapshot yang konsisten. Tidak mengunci/menulis kuota. DB-01 wajib menguji kembali snapshot/isolation ini pada PostgreSQL.
 - Polling 5 detik, timeout 8 detik, satu request aktif, refresh manual, pulih dari data lama dan pemeriksaan redirect/content-type/sesi kedaluwarsa. Kegagalan mempertahankan data terakhir dengan penanda dan menonaktifkan tautan tindakan sampai snapshot berhasil. Tanpa JavaScript gunakan reload.
 - `bolehBatal`: status Terdaftar/Menunggu/Hadir/Menunggu/Dilewati dan waktu tersisa sebelum jam mulai lebih dari 60 menit. `bolehCheckIn`: Terdaftar, hari jadwal sama, waktu dari 30 menit sebelum mulai sampai jam selesai inklusif. Ini hanya kelayakan tampilan; operasi UC-04/05 wajib memeriksa ulang di server pada transaksi tulis.
-- GET `/pasien/antrean/{idAntrean}/pembatalan` dan `/check-in` adalah sambungan informasi baca-saja. Server memeriksa kepemilikan dan kelayakan (409 jika tidak memenuhi); bila memenuhi, tampilkan bahwa layanan mandiri belum tersedia dan arahkan ke loket. Tidak membuat klaim pembatalan/check-in berhasil. POST/penulisan belum disediakan pada UC-03.
+- GET `/pasien/antrean/{idAntrean}/pembatalan` kini disediakan UC-04 dengan konfirmasi dan POST, sedangkan `/check-in` tetap sambungan informasi baca-saja sampai UC-05. Keduanya memeriksa kepemilikan dan kelayakan. Membuka GET tidak mengubah status/kuota.
 
 Contoh dataset sintetis awal: ANT-DEMO0004 milik pasien2 pada JDW-001 menghasilkan nomorAntrean=4, statusAntrean=Menunggu, nomorSedangDilayani=[1], jumlahDiDepan=3. Setelah tiket 001 selesai dan 002 Sedang Dilayani, snapshot berikutnya menghasilkan nomorSedangDilayani=[2], jumlahDiDepan=2. Tiket Dibatalkan memiliki jumlahDiDepan=null, berikutnya=[], statusAkhir=true. Tidak ada nama/noRM/NIK/password pada snapshot status.
+
+### UC-04 yang disediakan
+
+PIC Jefry. Acuan UC-04 hlm. 6-7, PC-04 hlm. 89, UI-04 hlm. 103 dan Hi-Fi RSI `111:1005`. Status yang diizinkan mengikuti kontrak bersama, termasuk Dilewati. Tidak menambah skema/seed/migrasi/status atau mengubah login.
+
+- `GET /pasien/antrean/{idAntrean}/pembatalan` menampilkan detail sendiri, syarat dan modal konfirmasi. Kembali/Escape menutup modal tanpa perubahan data. Tanpa JavaScript, konfirmasi tampil langsung. GET tidak mencadangkan atau mengubah kuota.
+- `POST` pada URL yang sama menerima `konfirmasi=ya` dan CSRF. Identitas pasien dari sesi; parameter tambahan idPasien/idJadwal tidak digunakan. Konfirmasi hilang/tidak sesuai atau ID tidak valid 400, tiket tidak dikenal/bukan milik pasien 404, peran lain 403, status/waktu/kuota tidak memenuhi 409, gangguan DB 503. Pesan galat tidak membawa rincian koneksi DB.
+- PembatalanService memakai transaksi tulis dengan urutan kunci JadwalPraktik lalu Antrean. Query awal hanya mengambil ID jadwal skalar dari tiket milik sesi agar entity tiket tidak dibaca ke persistence context sebelum kunci jadwal. Setelah kedua kunci diperoleh, kepemilikan, keterkaitan jadwal, status, waktu dan batas kapasitas diperiksa ulang.
+- PembatalanPolicy dipakai bersama oleh kelayakan tampilan UC-03 dan penyimpanan UC-04. Status boleh: Terdaftar, Menunggu, Hadir/Menunggu, Dilewati. Waktu server Asia/Jakarta harus lebih dari 60 menit sebelum mulai. Sedang Dilayani/Selesai/Dibatalkan/Tidak Hadir dan tepat 60 menit atau kurang ditolak. Waktu dibaca setelah menunggu kunci.
+- Perubahan menjadi Dibatalkan dan penambahan sisaKuota satu disimpan atomik. Jika kuota sudah mencapai kuotaTotal, tolak tanpa mengubah status. Kegagalan UPDATE kuota me-rollback status. Aksi ulang Dibatalkan menghasilkan 409 tanpa pengembalian lagi. Dua pembatalan berbeda diserialkan pada jadwal yang sama agar tidak kehilangan penambahan kuota.
+- Sukses menghasilkan 303 ke `/pasien/antrean/{idAntrean}/pembatalan/hasil`. Halaman hasil hanya mengklaim berhasil jika status DB Dibatalkan; URL hasil sebelum pembatalan menghasilkan 409. Hasil dapat dimuat ulang tanpa penulisan. Pesan keberhasilan adalah notifikasi layar, tidak menambah Notifikasi loket yang merupakan UC-10.
+- Seluruh respons pribadi no-store. Tautan kembali ke UC-03 dan kuota UC-01 memakai jadwal tiket yang sama; polling keduanya membaca DB terbaru. Tidak mengubah nomor, tanggal booking, waktu check-in atau waktu selesai tiket. Integrasi PostgreSQL DB-01 wajib mengulang uji rollback/persaingan ini.
+
+Contoh demo baru: pasien/ANT-DEMO0006 pada JDW-003 besok, Terdaftar dengan sisaKuota=9. Setelah pembatalan: Dibatalkan, sisaKuota=10. Submit ulang tetap 10. Bila sebelumnya ada booking lain yang mengonsumsi satu kuota, hasil pengembalian menjadi 9, bukan mengatur ulang ke kuotaTotal.
 
 | Pemilik | Permukaan integrasi yang disediakan | Konsumen |
 | --- | --- | --- |

@@ -35,21 +35,18 @@ public class StatusAntreanBoundary {
         catch (DataAccessException ex) { return jawaban(503, Map.of("pesan", "Status antrean belum dapat dimuat. Silakan coba lagi.")); }
     }
 
-    /** Sambungan baca-saja; transaksi pembatalan/check-in disediakan pada UC-04/05. */
-    @GetMapping({"/pasien/antrean/{idAntrean}/pembatalan", "/pasien/antrean/{idAntrean}/check-in"})
+    /** Sambungan baca-saja; transaksi check-in disediakan pada UC-05. */
+    @GetMapping("/pasien/antrean/{idAntrean}/check-in")
     public String informasi(@PathVariable String idAntrean, HttpServletRequest request,
                             HttpServletResponse response, Model model) {
         response.setHeader("Cache-Control", "no-store");
-        boolean batal = request.getRequestURI().endsWith("/pembatalan");
-        model.addAttribute("judul", batal ? "Pembatalan antrean" : "Check-in kedatangan");
+        model.addAttribute("judul", "Check-in kedatangan");
         try {
             var tiket = service.snapshot(idAntrean).dipilih();
             model.addAttribute("tiket", tiket);
-            if (batal ? tiket.bolehBatal() : tiket.bolehCheckIn()) {
+            if (tiket.bolehCheckIn()) {
                 model.addAttribute("informasi", "Layanan mandiri ini belum tersedia. Silakan hubungi petugas loket.");
-            } else galat(model, response, 409, batal
-                    ? "Tiket tidak memenuhi syarat pembatalan. Pembatalan memerlukan waktu lebih dari 60 menit sebelum praktik dan status yang diizinkan."
-                    : "Check-in hanya untuk tiket Terdaftar pada hari kunjungan, mulai 30 menit sebelum praktik sampai jam selesai.");
+            } else galat(model, response, 409, "Check-in hanya untuk tiket Terdaftar pada hari kunjungan, mulai 30 menit sebelum praktik sampai jam selesai.");
         } catch (IllegalArgumentException ex) { galat(model, response, 400, ex.getMessage()); }
         catch (NoSuchElementException ex) { galat(model, response, 404, ex.getMessage()); }
         catch (DataAccessException ex) { galat(model, response, 503, "Tiket belum dapat dimuat. Silakan coba lagi."); }

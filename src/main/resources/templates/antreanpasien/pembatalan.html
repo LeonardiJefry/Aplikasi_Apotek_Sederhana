@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Pembatalan Antrean')}"></head>
+<body class="cancel-page"><header th:replace="~{fragments/layout :: header}"></header>
+<div class="app-shell"><nav class="sidebar" aria-label="Menu pasien"><p class="eyebrow">PASIEN</p>
+  <a class="schedule-nav" th:href="@{/pasien}">Ringkasan</a><a class="nav-active" th:href="@{/pasien/antrean}">Antrean saya</a><a class="schedule-nav" th:href="@{/pasien/jadwal}">Jadwal praktik</a>
+</nav><main class="content schedule-content">
+  <p class="help">Antrean / Detail antrean</p><h1>Antrean Saya</h1><p class="muted">Kelola dan pantau detail pendaftaran antrean kunjungan Anda.</p>
+  <p th:if="${pesanGalat != null}" role="alert" class="alert danger" th:text="${pesanGalat}"></p>
+  <p th:if="${berhasil == true}" role="status" class="alert cancel-success">Antrean berhasil dibatalkan. Kuota telah dikembalikan ke jadwal praktik.</p>
+  <div th:if="${tiket != null}" class="cancel-grid" th:with="j=${tiket.jadwal}">
+    <section class="card cancel-detail"><div class="cancel-heading"><h2>Detail Antrean</h2><span class="badge" th:text="${tiket.statusAntrean}"></span></div>
+      <h3 th:text="${j.poli}"></h3><p th:text="${j.dokter}"></p><p class="help" th:text="${j.spesialisasi}"></p>
+      <dl class="booking-details"><dt>Tanggal kunjungan</dt><dd th:text="${j.tanggal.toString()}"></dd><dt>Sesi / Jam praktik</dt><dd th:text="${j.sesi + ' | ' + j.jamMulai + '–' + j.jamSelesai + ' WIB'}"></dd>
+        <dt>Nomor antrean Anda</dt><dd th:text="${tiket.nomorTampilan()}"></dd><dt>Nomor sedang dilayani</dt><dd th:text="${tiket.nomorSekarang()}"></dd><dt>Sisa antrean</dt><dd th:text="${tiket.sisaTampilan()}"></dd><dt>Sisa kuota jadwal</dt><dd id="cancel-quota" th:text="${j.sisaKuota + ' dari ' + j.kuotaTotal}"></dd></dl>
+      <p class="cancel-policy">Pembatalan hanya dapat dilakukan lebih dari 60 menit sebelum jam mulai praktik dan dari status yang diizinkan.</p>
+      <div class="cancel-actions"><a class="button outline" th:href="@{/pasien/antrean/{id}(id=${tiket.idAntrean})}">Kembali ke Status Antrean</a>
+        <button th:if="${tiket.bolehBatal and berhasil != true and pesanGalat == null}" id="cancel-open" type="button" class="cancel-danger" hidden>Batalkan Antrean</button>
+        <a th:if="${berhasil == true}" class="button primary" th:href="@{/pasien/jadwal(tanggal=${j.tanggal.toString()},idPoli=${j.idPoli},idDokter=${j.idDokter})}">Lihat Kuota Jadwal</a>
+      </div>
+    </section>
+    <aside class="card"><h2>Informasi Penting</h2><p>Pembatalan harus dilakukan lebih dari 60 menit sebelum jam mulai praktik.</p><hr><p>Setelah pembatalan berhasil, status antrean berubah menjadi Dibatalkan.</p><hr><p>Satu kuota pada jadwal praktik dikembalikan ke sistem.</p></aside>
+    <dialog th:if="${tiket.bolehBatal and berhasil != true and pesanGalat == null}" id="cancel-dialog" class="cancel-dialog" aria-labelledby="cancel-title" aria-describedby="cancel-description" open>
+      <div class="cancel-warning-symbol" aria-hidden="true">!</div><h2 id="cancel-title">Batalkan Antrean?</h2>
+      <p id="cancel-description" th:text="${'Apakah Anda yakin ingin membatalkan antrean ' + j.poli + ' dengan nomor ' + tiket.nomorTampilan() + '? Kuota akan dikembalikan setelah pembatalan berhasil.'}"></p>
+      <p class="alert danger">Pembatalan hanya dapat diproses jika waktu tersisa masih lebih dari 60 menit. Status dan waktu diperiksa kembali saat Anda mengonfirmasi.</p>
+      <form id="cancel-form" method="post" th:action="@{/pasien/antrean/{id}/pembatalan(id=${tiket.idAntrean})}">
+        <input type="hidden" name="konfirmasi" value="ya">
+        <div class="cancel-actions"><a id="cancel-back" class="button outline" th:href="@{/pasien/antrean/{id}(id=${tiket.idAntrean})}">Kembali</a><button type="button" id="cancel-close" class="outline" hidden>Kembali</button><button type="submit" id="cancel-submit" class="cancel-danger">Ya, Batalkan</button></div>
+      </form>
+      <noscript><p class="help">Konfirmasi ditampilkan langsung karena JavaScript tidak aktif. Kembali tidak mengubah pendaftaran.</p></noscript>
+    </dialog>
+  </div>
+  <a th:if="${tiket == null}" class="button outline" th:href="@{/pasien/antrean}">Kembali ke Antrean Saya</a>
+</main></div><footer th:replace="~{fragments/layout :: footer}"></footer><script th:src="@{/js/pembatalan.js}" defer></script></body></html>
