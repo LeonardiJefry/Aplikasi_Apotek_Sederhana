@@ -260,6 +260,28 @@ def check_check_in(base, password):
     print("PASS UC-05: real-time window, CSRF, ownership, no quota change and counter warnings")
 
 
+def check_calls(base, password):
+    counter = client()
+    login(counter, base, "loket", password)
+    page_url = "/loket/panggilan?idJadwal=JDW-003"
+    _, _, page = expect_status(request(counter, base, page_url), 200, "Counter call page")
+    assert "Panggilan antrean" in page and "Panggil antrean berikutnya" in page
+    _, headers, body = expect_status(request(counter, base, "/loket/panggilan/data?idJadwal=JDW-003"), 200, "Future session call snapshot")
+    data = json.loads(body)
+    assert data["dipanggil"] is None and not data["jamLayanan"] and not data["bolehPanggil"]
+    assert headers.get("Cache-Control") == "no-store"
+    assert not any(key in body for key in ('"nik":', '"passwordHash":', '"tanggalLahir":'))
+    action = "/loket/panggilan/JDW-003/panggil"
+    expect_status(request(counter, base, action, {}), 403, "Calling requires CSRF")
+    expect_status(request(counter, base, action, {"_csrf": csrf(page)}), 409, "Future session cannot be called")
+    for username in ("pasien", "admin", "dokter"):
+        other = client()
+        login(other, base, username, password)
+        expect_status(request(other, base, page_url), 403, "Other role cannot open counter call page")
+        expect_status(request(other, base, "/loket/panggilan/data?idJadwal=JDW-003"), 403, "Other role cannot read counter call snapshot")
+    print("PASS UC-06: call page, future-session rejection, read-only snapshot, CSRF and role isolation")
+
+
 def main():
     if len(sys.argv) != 2:
         raise SystemExit("Usage: python scripts/smoke_demo.py PATH_TO_BOOT_JAR")
@@ -304,6 +326,7 @@ def main():
                 check_queue_status(base, password)
                 check_check_in(base, password)
                 check_cancellation(base, password)
+                check_calls(base, password)
                 print(f"PASS demo startup {run}: fresh working directory, H2, synthetic accounts")
             finally:
                 process.terminate()

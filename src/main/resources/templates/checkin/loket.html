@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="id" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments/layout :: head('Peringatan Check-in Loket')}"></head><body class="checkin-page"><header th:replace="~{fragments/layout :: header}"></header>
-<div class="app-shell"><nav class="sidebar" aria-label="Menu loket"><p class="eyebrow">PETUGAS LOKET</p><a class="schedule-nav" th:href="@{/loket}">Ringkasan</a><a class="nav-active" th:href="@{/loket/check-in}">Peringatan check-in</a></nav>
+<div class="app-shell"><nav class="sidebar" aria-label="Menu loket"><p class="eyebrow">PETUGAS LOKET</p><a class="schedule-nav" th:href="@{/loket}">Ringkasan</a><a class="schedule-nav" th:href="@{/loket/panggilan}">Panggilan antrean</a><a class="nav-active" th:href="@{/loket/check-in}">Peringatan check-in</a></nav>
 <main class="content schedule-content"><p class="help">Loket / Kehadiran pasien</p><h1>Peringatan check-in</h1><p class="muted">Perhatikan pasien yang belum check-in menjelang gilirannya.</p>
 <p th:if="${pesanGalat != null}" class="alert danger" role="alert" th:text="${pesanGalat}"></p>
 <div th:if="${snapshot != null}" id="checkin-warnings" th:attr="data-api-url=@{/loket/check-in/data}">
