@@ -17,11 +17,12 @@ import org.springframework.web.util.UriUtils;
 @Controller
 public class PanggilanBoundary {
     private final PanggilanService service;
-    public PanggilanBoundary(PanggilanService service) { this.service=service; }
+    private final NotifikasiLoketService notifikasi;
+    public PanggilanBoundary(PanggilanService service, NotifikasiLoketService notifikasi) { this.service=service; this.notifikasi=notifikasi; }
     @GetMapping("/loket/panggilan")
     public String halaman(@RequestParam(required=false) String idJadwal,Model model,HttpServletResponse response) {
         response.setHeader("Cache-Control","no-store");
-        try { model.addAttribute("snapshot",service.snapshot(idJadwal)); }
+        try { var snapshot=service.snapshot(idJadwal); model.addAttribute("snapshot",snapshot); notifikasiSelesai(model,snapshot); }
         catch(IllegalArgumentException ex) { error(response,model,400,ex.getMessage()); }
         catch(NoSuchElementException ex) { error(response,model,404,ex.getMessage()); }
         catch(DataAccessException ex) { error(response,model,503,"Antrean belum dapat dimuat. Silakan coba lagi."); }
@@ -54,9 +55,13 @@ public class PanggilanBoundary {
         catch(PanggilanException ex) { error(response,model,409,ex.getMessage()); }
         catch(DataAccessException ex) { error(response,model,503,"Perubahan gagal disimpan. Muat ulang antrean dan coba lagi."); }
         // Operasi tulis sudah berakhir/rollback; baca ulang keadaan server untuk pemulihan form lama.
-        try { model.addAttribute("snapshot",service.snapshot(idJadwal)); }
+        try { var snapshot=service.snapshot(idJadwal); model.addAttribute("snapshot",snapshot); notifikasiSelesai(model,snapshot); }
         catch(IllegalArgumentException|NoSuchElementException|DataAccessException ignored) { /* Pesan awal dipertahankan. */ }
         return new ModelAndView("panggilan/index",model.asMap());
+    }
+    /** UC-10: notifikasi pemeriksaan selesai dari ruang periksa untuk jadwal terpilih; hanya membaca. */
+    private void notifikasiSelesai(Model model,PanggilanService.Snapshot snapshot) {
+        if(snapshot.jadwal()!=null) model.addAttribute("notifikasiSelesai",notifikasi.daftarUntukLoket(snapshot.jadwal().idJadwal()));
     }
     private ResponseEntity<?> json(int status,Object value) { return ResponseEntity.status(status).cacheControl(CacheControl.noStore()).body(value); }
     private void error(HttpServletResponse response,Model model,int status,String message) { response.setStatus(status); model.addAttribute("pesanGalat",message); }

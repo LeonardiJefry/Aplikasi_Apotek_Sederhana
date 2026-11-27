@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="id" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments/layout :: head('Antrean Ruang Periksa')}"></head>
-<!-- UI-09: Hi-Fi RSI desktop 50:582, mobile 51:647, state 53:807; layout bersama tetap. -->
+<!-- UI-09/UI-10: Hi-Fi RSI desktop 50:582 dan 52:694, mobile 51:647, state 53:807; layout bersama tetap. -->
 <body class="dokter-page"><header th:replace="~{fragments/layout :: header}"></header>
 <div class="app-shell"><nav class="sidebar" aria-label="Menu dokter"><p class="eyebrow">RUANG PERIKSA</p>
 <a class="schedule-nav" th:href="@{/dokter}">Ringkasan</a><a class="nav-active" aria-current="page" th:href="@{/dokter/antrean}">Antrean pasien</a></nav>
@@ -12,8 +12,41 @@
 <div class="dk-intro"><div><h1>Antrean ruang periksa</h1><p class="dk-subtitle">Pantau urutan dan status pasien sesuai jadwal praktik hari ini.</p></div>
  <p th:if="${snapshot != null}" id="dk-live" class="dk-live" role="status" aria-live="polite"><img th:src="@{/images/dokter/live-dot.svg}" width="8" height="8" alt=""><span th:text="${'Diperbarui otomatis · ' + #strings.substring(snapshot.sekarang,0,5)}"></span></p></div>
 
-<p th:if="${pesanGalat != null and snapshot != null}" class="alert danger" role="alert" th:text="${pesanGalat}"></p>
+<p th:if="${pesanGalat != null and snapshot != null and galatStatus == null and galatSimpan == null}" class="alert danger" role="alert" th:text="${pesanGalat}"></p>
 <p th:if="${pesanBerhasil != null}" class="alert cancel-success" role="status" th:text="${pesanBerhasil}"></p>
+
+<!-- UI-10 toast pemeriksaan selesai (Hi-Fi 52:1006) -->
+<section th:if="${selesaiNomor != null and statusNotifikasi != 'Gagal'}" id="dk-toast" class="dk-toast" role="status">
+ <img th:src="@{/images/dokter/check-circle.svg}" width="24" height="24" alt="">
+ <div><strong th:text="${'Pemeriksaan ' + selesaiNomor + ' selesai'}"></strong>
+  <p th:text="${selesaiNama + ' · status tersimpan pukul ' + selesaiWaktu + ' · notifikasi ' + (statusNotifikasi == 'Terkirim' ? 'terkirim ke petugas loket.' : 'tersimpan untuk petugas loket (' + statusNotifikasi + ').')}"></p></div>
+ <button type="button" class="dk-toast-close" aria-label="Tutup pemberitahuan" hidden><img th:src="@{/images/dokter/x.svg}" width="20" height="20" alt=""></button>
+</section>
+
+<!-- UI-10 state: status tersimpan, notifikasi gagal/tertunda (Hi-Fi 53:895) -->
+<section th:if="${(selesaiNomor != null and statusNotifikasi == 'Gagal') or notifikasiGagal != null}" class="card dk-state dk-banner" role="alert">
+ <img th:src="@{/images/dokter/bell.svg}" width="28" height="28" alt="">
+ <div><h2>Status tersimpan, notifikasi tertunda</h2>
+  <p th:text="${selesaiNomor != null ? 'Pemeriksaan ' + selesaiNomor + ' selesai pukul ' + selesaiWaktu + '. Notifikasi ke petugas loket gagal dikirim; kirim ulang dari kartu Terakhir diselesaikan.' : 'Notifikasi ke petugas loket masih gagal dikirim. Status pemeriksaan tetap tersimpan.'}"></p>
+  <span class="dk-badge" data-status="Notif-Gagal">Notifikasi gagal</span></div>
+</section>
+
+<!-- UI-10 state: status tidak valid (Hi-Fi 53:879) -->
+<section th:if="${galatStatus != null}" class="card dk-state" role="alert">
+ <img th:src="@{/images/dokter/alert-circle.svg}" width="28" height="28" alt=""><h2>Status pasien tidak dapat diselesaikan</h2>
+ <p th:text="${galatNomor + ' berstatus ' + galatStatus + '. ' + pesanGalat}"></p>
+ <span class="dk-badge" th:attr="data-status=${galatStatus}" th:text="${'Status: ' + galatStatus}"></span>
+ <a class="button outline dk-full" th:href="@{/dokter/antrean}">Mengerti</a>
+</section>
+
+<!-- UI-10 state: gagal menyimpan status (Hi-Fi 53:914) -->
+<section th:if="${galatSimpan != null and snapshot != null}" class="card dk-state" role="alert">
+ <img th:src="@{/images/dokter/alert-circle.svg}" width="28" height="28" alt=""><h2>Gagal menyimpan status</h2>
+ <p>Status tetap Sedang dilayani karena perubahan belum tersimpan. Silakan coba lagi.</p>
+ <span class="dk-badge" data-status="Sedang Dilayani">Sedang dilayani</span>
+ <form method="post" class="dk-full" th:if="${snapshot.aktif != null}" th:action="@{/dokter/antrean/{id}/selesai(id=${snapshot.aktif.jadwal.idJadwal})}"><input type="hidden" name="idAntrean" th:value="${galatSimpan}">
+  <button class="primary dk-full" type="submit"><img th:src="@{/images/dokter/refresh-white.svg}" width="20" height="20" alt="">Coba lagi</button></form>
+</section>
 
 <section th:if="${snapshot == null}" class="card dk-state" role="alert">
  <img th:src="@{/images/dokter/wifi-off.svg}" width="28" height="28" alt=""><h2>Gagal memuat daftar antrean</h2>
@@ -52,14 +85,16 @@
 
  <div class="dk-workspace">
   <div class="dk-focus">
-   <!-- Pasien saat ini: Sedang Dilayani, atau pasien yang sedang dipanggil (UC-06) -->
+   <!-- UI-09/UI-10: pasien Sedang Dilayani dengan tombol Selesai (Hi-Fi 50:690) -->
    <section class="card dk-current" th:if="${s.pelayanan != null}" th:with="t=${s.pelayanan.pasien}">
     <div class="dk-card-head"><p class="dk-caption">Pasien saat ini</p><span class="dk-badge" data-status="Sedang Dilayani">Sedang dilayani</span></div>
     <p class="dk-number" th:text="${t.nomorTampilan()}"></p>
     <div><h3 th:text="${t.nama}"></h3><p class="dk-sub" th:text="${t.noRekamMedis}"></p></div>
     <div class="dk-info"><div><p class="dk-caption">Dipanggil</p><p class="dk-info-value" th:text="${s.pelayanan.dipanggil != null ? s.pelayanan.dipanggil + ' WIB' : '-'}"></p></div>
      <div><p class="dk-caption">Durasi</p><p class="dk-info-value" th:text="${s.pelayanan.durasiMenit != null ? s.pelayanan.durasiMenit + ' menit' : '-'}"></p></div></div>
-    <p class="dk-note">Pemeriksaan sedang berlangsung. Pasien berikutnya dapat dipanggil setelah pemeriksaan selesai.</p>
+    <form method="post" class="dokter-action" th:action="@{/dokter/antrean/{id}/selesai(id=${g.jadwal.idJadwal})}"><input type="hidden" name="idAntrean" th:value="${t.idAntrean}">
+     <button class="primary dk-full dk-large" type="submit" data-call-action data-finish><img th:src="@{/images/dokter/check.svg}" width="20" height="20" alt="">Selesai</button></form>
+    <p class="dk-note">Tekan setelah pemeriksaan selesai. Petugas loket otomatis menerima notifikasi.</p>
    </section>
 
    <section class="card dk-current" th:if="${s.pelayanan == null and p != null and p.dipanggil != null}" th:with="t=${p.dipanggil}">
@@ -82,11 +117,25 @@
     <noscript><form method="post" th:action="@{/dokter/antrean/{id}/lewati(id=${p.jadwal.idJadwal})}"><input type="hidden" name="idPanggilan" th:value="${p.idPanggilan}"><input type="hidden" name="konfirmasi" value="ya"><button class="outline dk-full" type="submit" th:disabled="${!p.bolehLewati}">Ya, tandai dilewati</button></form></noscript>
    </section>
 
-   <section class="card dk-current dk-idle" th:if="${s.pelayanan == null and (p == null or p.dipanggil == null)}">
-    <p class="dk-caption">Pasien saat ini</p><h3>Belum ada pasien yang dilayani</h3><p class="dk-note">Panggil pasien berikutnya saat siap memulai pemeriksaan.</p>
+   <!-- UI-10: tidak ada pasien dilayani/dipanggil, pasien berikutnya siap dipanggil (Hi-Fi 52:753) -->
+   <section class="card dk-current" th:if="${s.pelayanan == null and p != null and p.dipanggil == null and p.berikutnya != null}" th:with="n=${p.berikutnya}">
+    <div class="dk-card-head"><p class="dk-caption">Pasien berikutnya</p><span class="dk-badge" th:attr="data-status=${n.statusAntrean}" th:text="${n.statusAntrean}"></span></div>
+    <p class="dk-number" th:text="${'A-' + #numbers.formatInteger(n.nomorAntrean,3)}"></p>
+    <div><h3 th:text="${n.nama}"></h3><p class="dk-sub" th:text="${n.noRekamMedis}"></p></div>
+    <div class="dk-info"><div><p class="dk-caption">Check-in</p><p class="dk-info-value" th:text="${n.waktuCheckIn != null ? #strings.substring(n.waktuCheckIn,11,16) + ' WIB' : 'Belum check-in'}"></p></div>
+     <div><p class="dk-caption">Pelewatan</p><p class="dk-info-value" th:text="${n.jumlahPelewatan + ' kali'}"></p></div></div>
+    <form method="post" class="dokter-action" th:action="@{/dokter/antrean/{id}/panggil(id=${p.jadwal.idJadwal})}">
+     <button class="primary dk-full dk-large" type="submit" data-call-action data-call th:disabled="${!p.bolehPanggil}">
+      <img class="dk-icon-on" th:src="@{/images/dokter/volume.svg}" width="20" height="20" alt=""><img class="dk-icon-off" th:src="@{/images/dokter/volume-disabled.svg}" width="20" height="20" alt="">Panggil pasien</button></form>
+    <p class="dk-note" th:text="${p.jamLayanan ? 'Pasien dipanggil ke ruang periksa dan statusnya berubah menjadi Sedang dilayani setelah kehadiran dikonfirmasi.' : 'Panggilan tersedia selama jam praktik.'}"></p>
    </section>
 
-   <section class="card dk-next" th:if="${p != null}">
+   <section class="card dk-current dk-idle" th:if="${s.pelayanan == null and (p == null or (p.dipanggil == null and p.berikutnya == null))}">
+    <p class="dk-caption">Pasien saat ini</p><h3>Belum ada pasien yang dilayani</h3><p class="dk-note">Tidak ada antrean yang dapat dipanggil saat ini.</p>
+   </section>
+
+   <!-- Pasien berikutnya ringkas saat ada pasien dilayani/dipanggil (Hi-Fi 50:719) -->
+   <section class="card dk-next" th:if="${p != null and (s.pelayanan != null or p.dipanggil != null)}">
     <p class="dk-caption">Pasien berikutnya</p>
     <div class="dk-next-row" th:if="${p.berikutnya != null}" th:with="n=${p.berikutnya}"><span class="dk-number-box" th:text="${'A-' + #numbers.formatInteger(n.nomorAntrean,3)}"></span>
      <div><strong th:text="${n.nama}"></strong><p class="dk-sub" th:text="${(n.waktuCheckIn != null ? 'Check-in ' + #strings.substring(n.waktuCheckIn,11,16) + ' · ' : n.statusAntrean + ' · ') + n.noRekamMedis}"></p></div></div>
@@ -94,7 +143,19 @@
     <form method="post" class="dokter-action" th:action="@{/dokter/antrean/{id}/panggil(id=${p.jadwal.idJadwal})}">
      <button class="primary dk-full" type="submit" data-call-action data-call th:disabled="${!p.bolehPanggil}">
       <img class="dk-icon-on" th:src="@{/images/dokter/volume.svg}" width="20" height="20" alt=""><img class="dk-icon-off" th:src="@{/images/dokter/volume-disabled.svg}" width="20" height="20" alt="">Panggil pasien</button></form>
-    <p class="dk-note" th:text="${p.sedangDilayani ? 'Selesaikan pasien saat ini untuk memanggil pasien berikutnya.' : (p.dipanggil != null ? 'Tunggu konfirmasi kehadiran pasien yang sedang dipanggil.' : (!p.jamLayanan ? 'Panggilan tersedia selama jam praktik.' : 'Pasien dipanggil ke ruang periksa dan statusnya berubah setelah kehadiran dikonfirmasi.'))}"></p>
+    <p class="dk-note" th:text="${p.sedangDilayani ? 'Selesaikan pasien saat ini untuk memanggil pasien berikutnya.' : 'Tunggu konfirmasi kehadiran pasien yang sedang dipanggil.'}"></p>
+   </section>
+
+   <!-- UI-10: terakhir diselesaikan dan status notifikasi loket (Hi-Fi 52:772) -->
+   <section class="card dk-next" th:if="${s.terakhir != null}" th:with="r=${s.terakhir}">
+    <p class="dk-caption">Terakhir diselesaikan</p>
+    <div class="dk-next-row"><span class="dk-number-box dk-number-done" th:text="${r.pasien.nomorTampilan()}"></span>
+     <div><strong th:text="${r.pasien.nama}"></strong><p class="dk-sub" th:text="${'Selesai ' + r.pasien.waktuSelesai + (r.durasiMenit != null ? ' · durasi ' + r.durasiMenit + ' menit' : '')}"></p></div>
+     <span class="dk-badge" data-status="Selesai">Selesai</span></div>
+    <p class="dk-note dk-notif-line">Notifikasi loket: <span class="dk-badge" th:attr="data-status=${r.statusNotifikasi != null ? 'Notif-' + r.statusNotifikasi : 'Notif-Gagal'}" th:text="${r.statusNotifikasi != null ? r.statusNotifikasi : 'Belum tercatat'}"></span></p>
+    <form th:if="${r.statusNotifikasi == null or r.statusNotifikasi == 'Gagal'}" method="post" class="dokter-action" th:action="@{/dokter/antrean/{id}/notifikasi(id=${g.jadwal.idJadwal})}"><input type="hidden" name="idAntrean" th:value="${r.pasien.idAntrean}">
+     <button class="outline dk-full" type="submit" data-call-action><img th:src="@{/images/dokter/refresh.svg}" width="20" height="20" alt="">Kirim ulang notifikasi</button></form>
+    <p class="dk-note">Petugas loket menerima notifikasi untuk memproses administrasi kunjungan.</p>
    </section>
   </div>
 
@@ -111,6 +172,8 @@
      <td data-label="Status"><span class="dk-badge" th:attr="data-status=${p != null and p.dipanggil != null and p.dipanggil.idAntrean == a.idAntrean ? 'Dipanggil' : a.statusAntrean}" th:text="${p != null and p.dipanggil != null and p.dipanggil.idAntrean == a.idAntrean ? 'Dipanggil' : a.statusAntrean}"></span></td>
      <td data-label="Aksi" th:switch="${true}">
       <span th:case="${a.statusAntrean == 'Selesai'}" class="dk-muted" th:text="${a.waktuSelesai != null ? 'Selesai ' + a.waktuSelesai : 'Selesai'}"></span>
+      <form th:case="${a.statusAntrean == 'Sedang Dilayani'}" method="post" class="dokter-action" th:action="@{/dokter/antrean/{id}/selesai(id=${g.jadwal.idJadwal})}"><input type="hidden" name="idAntrean" th:value="${a.idAntrean}">
+       <button class="primary dk-small" type="submit" data-call-action data-finish><img th:src="@{/images/dokter/check-small.svg}" width="16" height="16" alt="">Selesai</button></form>
       <form th:case="${p != null and p.berikutnya != null and p.dipanggil == null and p.berikutnya.idAntrean == a.idAntrean}" method="post" class="dokter-action" th:action="@{/dokter/antrean/{id}/panggil(id=${p.jadwal.idJadwal})}">
        <button class="primary dk-small" type="submit" data-call-action data-call th:disabled="${!p.bolehPanggil}"><img class="dk-icon-on" th:src="@{/images/dokter/volume-small.svg}" width="16" height="16" alt=""><img class="dk-icon-off" th:src="@{/images/dokter/volume-small-disabled.svg}" width="16" height="16" alt="">Panggil</button></form>
       <button th:case="${p != null and p.dipanggil != null and p.dipanggil.idAntrean == a.idAntrean}" class="outline dk-small" type="button" data-call-action data-skip data-skip-open hidden th:disabled="${!p.bolehLewati}">Lewati</button>

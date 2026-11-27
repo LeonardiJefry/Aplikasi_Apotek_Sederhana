@@ -19,8 +19,11 @@ import org.springframework.web.util.UriUtils;
 public class DashboardDokterBoundary {
     private final DashboardDokterService service;
     private final PanggilanService panggilan;
-    public DashboardDokterBoundary(DashboardDokterService service, PanggilanService panggilan) {
-        this.service=service; this.panggilan=panggilan;
+    private final PemeriksaanService pemeriksaan;
+    private final NotifikasiLoketService notifikasi;
+    public DashboardDokterBoundary(DashboardDokterService service, PanggilanService panggilan,
+            PemeriksaanService pemeriksaan, NotifikasiLoketService notifikasi) {
+        this.service=service; this.panggilan=panggilan; this.pemeriksaan=pemeriksaan; this.notifikasi=notifikasi;
     }
 
     @GetMapping("/dokter/antrean")
@@ -44,6 +47,7 @@ public class DashboardDokterBoundary {
     @PostMapping("/dokter/antrean/{idJadwal}/{aksi}")
     public ModelAndView proses(@PathVariable String idJadwal, @PathVariable String aksi,
             @RequestParam(required=false) String idPanggilan, @RequestParam(required=false) String konfirmasi,
+            @RequestParam(required=false) String idAntrean,
             Model model, HttpServletResponse response, RedirectAttributes flash) {
         noStore(response);
         try {
@@ -53,16 +57,40 @@ public class DashboardDokterBoundary {
                 case "panggil" -> { panggilan.panggil(idJadwal); yield "Nomor antrean dipanggil. Tunggu pasien masuk ruang periksa."; }
                 case "hadir" -> { panggilan.hadir(idJadwal,idPanggilan); yield "Kehadiran dikonfirmasi. Pasien Sedang Dilayani."; }
                 case "lewati" -> { panggilan.lewati(idJadwal,idPanggilan,"ya".equals(konfirmasi)); yield "Pelewatan tersimpan. Panggilan berikutnya diperbarui jika tersedia."; }
+                case "selesai" -> {
+                    // PC-10: status Selesai disimpan dahulu; notifikasi loket di luar transaksi status.
+                    var hasil=pemeriksaan.selesai(idJadwal,idAntrean);
+                    var status=notifikasi.kirim(hasil.idAntrean());
+                    flash.addFlashAttribute("selesaiNomor",hasil.nomorTampilan());
+                    flash.addFlashAttribute("selesaiNama",hasil.nama());
+                    flash.addFlashAttribute("selesaiWaktu",hasil.waktuSelesai().toLocalTime().toString().substring(0,5));
+                    flash.addFlashAttribute("statusNotifikasi",status);
+                    yield null;
+                }
+                case "notifikasi" -> {
+                    var status=notifikasi.kirim(idAntrean);
+                    yield "Gagal".equals(status) ? null : "Notifikasi pemeriksaan selesai tersimpan untuk petugas loket (status "+status+").";
+                }
                 default -> throw new IllegalArgumentException("Tindakan antrean tidak valid.");
             };
-            flash.addFlashAttribute("pesanBerhasil",pesan);
+            if(pesan!=null) flash.addFlashAttribute("pesanBerhasil",pesan);
+            else if("notifikasi".equals(aksi)) flash.addFlashAttribute("notifikasiGagal",true);
             var redirect=new RedirectView("/dokter/antrean?idJadwal="+UriUtils.encodeQueryParam(idJadwal,StandardCharsets.UTF_8),true);
             redirect.setStatusCode(HttpStatus.SEE_OTHER);
             return new ModelAndView(redirect);
         } catch(IllegalArgumentException ex) { error(response,model,400,ex.getMessage()); }
         catch(NoSuchElementException ex) { error(response,model,404,ex.getMessage()); }
         catch(PanggilanException ex) { error(response,model,409,ex.getMessage()); }
-        catch(DataAccessException ex) { error(response,model,503,"Perubahan gagal disimpan. Muat ulang dashboard dan coba lagi."); }
+        catch(PemeriksaanException ex) {
+            error(response,model,409,ex.getMessage());
+            model.addAttribute("galatStatus",ex.getStatusAntrean());
+            model.addAttribute("galatNomor",DashboardDokterService.nomor(ex.getNomorAntrean()));
+        }
+        catch(DataAccessException ex) {
+            boolean simpanSelesai="selesai".equals(aksi);
+            error(response,model,503,simpanSelesai?"Gagal menyimpan status, silakan coba lagi.":"Perubahan gagal disimpan. Muat ulang dashboard dan coba lagi.");
+            if(simpanSelesai) model.addAttribute("galatSimpan",idAntrean);
+        }
         // Transaksi tulis sudah selesai/rollback; tampilkan keadaan server terbaru bila jadwal sah.
         try { model.addAttribute("snapshot",service.snapshot(idJadwal)); }
         catch(IllegalArgumentException|NoSuchElementException|DataAccessException ignored) { /* Pesan awal dipertahankan. */ }
