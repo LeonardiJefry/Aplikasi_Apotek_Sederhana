@@ -4,7 +4,22 @@ Diperbarui: 27 November 2026 (WIB). PIC seluruh tahap: Jefry (JL).
 
 ## Tahap aktif
 
-**UC-06: review - alur browser utama dan cek ulang timer V4 lulus pada fixture lokal. Regresi lengkap: 137 tes lulus, 3 error startup HTTP akibat izin loopback; verify penuh belum lulus. Paket review berhasil dibuat. CI UC-06 serta integrasi ke main masih diperlukan. SETUP-00 sampai UC-05: done melalui PR #6 sampai #11.**
+**UC-06: review - commit b3979c3 sudah di-push oleh Jefry, PR #12 terbuka. Java CI JDK 21 lulus: 140 tes tanpa failure/error/skipped, BUILD SUCCESS; smoke dua startup JAR demo dan login/peran/CSRF serta UC-01 sampai UC-06 lulus. Browser utama dan timer V4 juga lulus. Menunggu review dan merge PR #12 ke main sebelum UC-07. SETUP-00 sampai UC-05: done melalui PR #6 sampai #11.**
+
+## UC-06 - commit, push dan CI PR #12
+
+Pemeriksaan Git lokal menunjukkan branch `feat/uc-06-panggil-lewati` pada **b3979c38037ff2ced6ea559b6cb79000652ba065**, author/committer Jefry, pesan `feat(uc-06): add persistent queue calls and atomic skipping`; branch melacak origin dengan HEAD sama. Working tree tracked bersih sebelum pembaruan dokumentasi ini; file tambahan lokal tetap dipertahankan. Tidak ada commit/push/PR/merge oleh agent.
+
+[PR #12](https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana/pull/12) terkonfirmasi **open, merged=false**, base main `eb358efe`, head b3979c3. Java CI [run 45918873213](https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana/actions/runs/45918873213), job **140244529568 Build dan Test**, selesai **success**. Log job diperiksa langsung; CI memakai calon hasil merge PR `eae2cdaf` dengan head tersebut, bukan bukti PR telah merged.
+
+| Verifikasi CI | Hasil aktual |
+| --- | --- |
+| Bash, JDK 21 dan Maven verify | Temurin 21; `./mvnw --batch-mode --no-transfer-progress verify` **BUILD SUCCESS**, **140 tes, 0 failure, 0 error, 0 skipped**. Tiga tes HTTP yang terhalang loopback lokal kini lulus di runner CI |
+| Startup executable JAR | `python3 scripts/smoke_demo.py target/apotek-0.0.1-SNAPSHOT.jar` lulus untuk **dua JVM/startup** dari direktori kerja baru, H2 dan akun sintetis; tanpa server MySQL atau .env pribadi |
+| Login dan batas akses | Enam akun sintetis/empat peran lulus login, penolakan lintas peran, CSRF dan logout pada kedua startup |
+| Integrasi UC-01 sampai UC-06 | Smoke jadwal, booking, status, pembatalan, check-in dan panggilan lulus dua kali. Smoke UC-06 memeriksa halaman loket, snapshot read-only, larangan jadwal besok, CSRF dan isolasi peran. Jalur panggil/tunggu/lewati/replay juga lulus melalui PanggilanServletTests; alur browser ber-Clock sintetis dicatat di bawah |
+
+Hasil CI melengkapi keterbatasan verify/startup agent pada catatan historis di bawah, tanpa mengubah hasil lokal tersebut. **UC-06 belum done karena PR belum merged.** Langkah berikut: Jefry meninjau dan merge PR #12, lalu mulai branch UC-07 dari main terbaru. Pembaruan sesi ini hanya PROGRESS.md; usulan commit dokumentasi `docs(uc-06): record successful JDK 21 CI`. Commit/push/merge tetap dilakukan Jefry; Supabase tetap DB-01 sesudah QA-01 lulus dan masuk main.
 
 ## UC-06 - verifikasi browser dan perbaikan presisi timer
 
