@@ -7,13 +7,14 @@
 <span th:case="'PASIEN'">Lihat jadwal dokter dan sisa kuota untuk merencanakan kunjungan Anda.</span>
 <span th:case="'PETUGAS_LOKET'">Pantau kehadiran pasien dan kelola panggilan antrean sesuai jadwal pelayanan.</span>
 <span th:case="'ADMIN'">Atur kuota harian vaksinasi dan pantau ketersediaan layanan.</span>
-<span th:case="'DOKTER'">Jadwal praktik dan antrean pemeriksaan Anda akan tersedia di sini.</span></p>
+<span th:case="'DOKTER'">Pantau antrean pemeriksaan hari ini per sesi dan panggil pasien berikutnya.</span></p>
 <a th:if="${peran == 'PASIEN'}" class="button primary" th:href="@{/pasien/jadwal}">Lihat Jadwal Praktik</a>
 <a th:if="${peran == 'PASIEN'}" class="button outline" th:href="@{/pasien/antrean}">Antrean Saya</a>
 <a th:if="${peran == 'PASIEN'}" class="button outline" th:href="@{/pasien/check-in}">Check-in hari ini</a>
 <a th:if="${peran == 'PETUGAS_LOKET'}" class="button primary" th:href="@{/loket/check-in}">Peringatan Check-in</a>
 <a th:if="${peran == 'PETUGAS_LOKET'}" class="button outline" th:href="@{/loket/panggilan}">Panggilan Antrean</a>
 <a th:if="${peran == 'PETUGAS_LOKET'}" class="button outline" th:href="@{/loket/pasien}">Cari dan verifikasi pasien</a>
+<a th:if="${peran == 'DOKTER'}" class="button primary" th:href="@{/dokter/antrean}">Dashboard antrean</a>
 <a th:if="${peran == 'ADMIN'}" class="button primary" th:href="@{/admin/vaksinasi}">Kelola kuota vaksinasi</a>
 <a class="button outline" th:href="@{/vaksinasi}">Ketersediaan vaksinasi</a>
 <p class="help">Silakan hubungi petugas jika memerlukan bantuan.</p></section></main></div>
