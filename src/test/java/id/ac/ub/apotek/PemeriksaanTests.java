@@ -146,7 +146,7 @@ class PemeriksaanTests {
     }
 
     private void ticket(String id,int n,String status,String checkIn) {
-        jdbc.update("INSERT INTO Antrean (idAntrean,idPasien,idJadwal,nomorAntrean,tglBooking,statusAntrean,waktuCheckIn) VALUES (?,'PAS-001',?,?,CURRENT_TIMESTAMP,?,?)",id,JADWAL,n,status,checkIn);
+        jdbc.update("INSERT INTO Antrean (idAntrean,idPasien,idJadwal,nomorAntrean,tglBooking,statusAntrean,waktuCheckIn) VALUES (?,'PAS-001',?,?,CURRENT_TIMESTAMP,?,?)",id,JADWAL,n,status,checkIn==null?null:LocalDateTime.parse(checkIn.replace(' ','T')));
     }
     private String state(String id) { return jdbc.queryForObject("SELECT statusAntrean FROM Antrean WHERE idAntrean=?",String.class,id); }
     private LocalDateTime finished(String id) { return jdbc.queryForObject("SELECT waktuSelesai FROM Antrean WHERE idAntrean=?",LocalDateTime.class,id); }

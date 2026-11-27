@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Dataset sintetis dipasang sekali, atomik, dan tidak mereset perubahan fitur pada restart. */
 @Service
-@Profile({"demo", "test", "mysql"})
+@Profile({"demo", "test", "mysql", "supabase"})
 @ConditionalOnProperty(name = "klinik.demo.enabled", havingValue = "true")
 public class DemoDataService {
     private final JdbcTemplate jdbc;

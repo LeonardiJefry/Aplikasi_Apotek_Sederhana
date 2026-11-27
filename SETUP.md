@@ -97,7 +97,7 @@ SETUP-00 berstatus review ketika implementasi siap ditinjau dengan hasil dan cek
 
 ## 5. MySQL opsional historis
 
-Bagian ini mempertahankan konfigurasi yang sudah ada. MySQL tidak diperlukan pada SETUP-00, pengembangan UC, QA-01 atau CI. Target jarak jauh proyek adalah PostgreSQL Supabase pada DB-01.
+Bagian ini mempertahankan konfigurasi yang sudah ada. MySQL tidak diperlukan pada SETUP-00, pengembangan UC, QA-01 atau CI. Target jarak jauh proyek adalah PostgreSQL Supabase (bagian 6).
 
 Jika masih ingin menjalankan konfigurasi MySQL lokal, gunakan MySQL 8.0.16+ (8.4 sesuai compose.yaml); MariaDB XAMPP bukan target kolasi yang sama. Pertahankan `.env` yang sudah ada. Hanya bila belum ada, salin `.env.example` lalu isi DB_HOST, DB_PORT, DB_NAME, DB_USERNAME dan DB_PASSWORD secara lokal. Jangan commit kredensial.
 
@@ -115,9 +115,27 @@ Untuk Compose opsional, isi pula DB_ROOT_PASSWORD di `.env`, kemudian `docker co
 
 Seed MySQL hanya aktif jika `DEMO_ENABLED=true` dan `DEMO_PASSWORD` valid di `.env`. Password/tanggal/data tidak ditimpa setelah seed pertama. `allowPublicKeyRetrieval=true` dan `sslMode=DISABLED` pada contoh hanya untuk koneksi localhost. Tidak ada reset database atau baseline Flyway otomatis. File `.env` lama tidak diubah oleh pekerjaan H2 ini.
 
-## 6. DB-01 dan batas SETUP-00
+## 6. DB-01 PostgreSQL Supabase
 
-DB-01 baru dibuka setelah QA-01 lulus dan masuk main. Siapkan driver/profil PostgreSQL Supabase serta lokasi migrasi PostgreSQL terpisah. Audit tipe SQL, ekspresi NIK, casing identifier, timezone, constraint dan transaksi dari seluruh UC. Belum ada koneksi, migrasi PostgreSQL, atau kredensial Supabase yang dipasang pada SETUP-00.
+Profil `supabase` memakai driver PostgreSQL, Flyway `db/migration-postgresql` (V1-V5 setara migrasi MySQL/H2, V6 mengaktifkan Row Level Security) dan skema non-publik `klinik`. Migrasi MySQL historis di `db/migration` tidak diubah. Demo dan tes harian tetap H2.
+
+1. Pemilik tim membuat project di [Supabase](https://supabase.com) (region terdekat, misalnya Southeast Asia/Singapore) dan menyimpan database password di password manager. Jangan membagikan password lewat chat, issue atau commit.
+2. Buka **Project Settings → Database → Connection string**, pilih **Session pooler** (port 5432). Session pooler mendukung kunci transaksi dan prepared statement yang dipakai booking/panggilan; jangan memakai Transaction pooler port 6543.
+3. Salin `.env.example` menjadi `.env` bila belum ada, lalu isi `SUPABASE_DB_HOST`, `SUPABASE_DB_USER` (format `postgres.<project-ref>`) dan `SUPABASE_DB_PASSWORD`. File `.env` sudah di-ignore.
+4. Jalankan `./mvnw spring-boot:run -Dspring-boot.run.profiles=supabase`. Flyway membuat skema `klinik` dan menerapkan V1-V6; Hibernate memvalidasi skema. Untuk database demo bersama, isi `DEMO_ENABLED=true` dan `DEMO_PASSWORD` (minimal 12 karakter) hanya pada start pertama, lalu kembalikan ke `false`.
+5. Jangan menambahkan skema `klinik` ke **Exposed schemas** pada pengaturan Data API. Tabel juga ber-RLS tanpa policy, sehingga kunci anon/authenticated tidak dapat membaca data pasien; aplikasi tetap memakai koneksi JDBC pemilik tabel.
+
+Regresi PostgreSQL lokal (tanpa Supabase) memakai container sementara dan skema acak per kelas tes:
+
+```bash
+docker run -d --name klinik-pg-test -e POSTGRES_PASSWORD=password_lokal_sementara -e POSTGRES_DB=klinik -p 127.0.0.1:55432:5432 postgres:17-alpine
+```
+
+```bash
+KLINIK_PG_URL=jdbc:postgresql://127.0.0.1:55432/klinik KLINIK_PG_USER=postgres KLINIK_PG_PASSWORD=password_lokal_sementara ./mvnw --batch-mode --no-transfer-progress verify
+```
+
+Tanpa `KLINIK_PG_URL`, kelas `Postgresql*Tests` dilewati. CI menjalankannya otomatis dengan service PostgreSQL 17.
 
 Login/layout tetap memakai token Design System Hi-Fi RSI yang sudah diterapkan. UC-01 sampai UC-06 tersedia seperti bagian 7-12; UI-07 sampai UI-10 menunggu tahap fitur. Font Poppins memakai fallback bila belum tersedia. Model tetap di `id.ac.ub.apotek.entity` dan repository di `id.ac.ub.apotek.repository`; jangan menduplikasi model.
 

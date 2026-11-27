@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 @Component
-@Profile({"demo", "test", "mysql"})
+@Profile({"demo", "test", "mysql", "supabase"})
 @ConditionalOnProperty(name = "klinik.demo.enabled", havingValue = "true")
 public class DemoDataInitializer implements ApplicationRunner {
     private final DemoDataService data;

@@ -185,6 +185,14 @@ Acuan: Modul 1 UR-10/SR-18-19, Modul 2 UC-10 halaman PDF 10-11, PC-10 halaman 82
 - Dashboard: tombol Selesai pada kartu Pasien saat ini dan baris Sedang Dilayani; toast hasil; kartu Pasien berikutnya dengan Panggil pasien (layanan UC-06, tidak dipanggil otomatis); kartu Terakhir diselesaikan dengan status notifikasi dan Kirim ulang bila Gagal/belum tercatat. Snapshot menambah `terakhir {pasien, durasiMenit, statusNotifikasi}`.
 - Loket: `GET /loket/panggilan` menampilkan kartu Notifikasi ruang periksa untuk jadwal terpilih (nomor, nama, waktu selesai, status kirim), hanya membaca dan tidak mengubah status kirim. `NotifikasiLoketService.daftarUntukLoket` hanya untuk PETUGAS_LOKET.
 
+### DB-01 - PostgreSQL Supabase
+
+- Profil `supabase`: driver PostgreSQL, kredensial dari environment/.env (`SUPABASE_DB_*`), Session pooler port 5432, `sslmode=require`, skema `klinik` melalui `currentSchema`, Hikari maksimal 5 koneksi. Seed sintetis hanya bila `DEMO_ENABLED=true`. Profil demo/test H2 dan mysql historis tidak berubah.
+- Migrasi `db/migration-postgresql`: V1-V5 setara isi migrasi MySQL/H2 (DATETIME → TIMESTAMP(0), DATETIME(6) → TIMESTAMP(6), TINYINT → SMALLINT, REGEXP NIK → operator `~`, tanpa tableOptions, MODIFY → ALTER COLUMN TYPE). V6 mengaktifkan Row Level Security tanpa policy pada 12 tabel; Supabase Data API tidak dapat membaca data, aplikasi memakai koneksi pemilik tabel.
+- Identifier ditulis camelCase tanpa kutip seperti migrasi lain; PostgreSQL menyimpannya huruf kecil (mis. `jadwalpraktik`) dan Hibernate/JDBC tanpa kutip memakai nama yang sama, sehingga kode dan SQL tes tidak berubah. Waktu tetap TIMESTAMP tanpa zona dengan nilai Asia/Jakarta dari Clock aplikasi.
+- Entity `Pasien.nik` dan `VerifikasiPasien.sidikIdentitas` ditandai `SqlTypes.CHAR` agar validasi Hibernate cocok dengan CHAR(16)/CHAR(64) PDM pada H2, MySQL dan PostgreSQL. Tidak ada perubahan kolom, status atau aturan bisnis.
+- Regresi PostgreSQL: `PostgresqlSchemaConcurrencyTests` (skema/RLS/constraint, booking bersamaan tanpa kuota negatif atau nomor ganda, Selesai dan panggil bersamaan tepat satu sukses), `PostgresqlQaDemoTests` (Cek demo 1-5) dan `PostgresqlPemeriksaanTests` (UC-10). Aktif bila `KLINIK_PG_URL` diisi; CI memakai service PostgreSQL 17.
+
 | Peristiwa | Perubahan |
 | --- | --- |
 | Booking (MF) | Buat `Terdaftar`; kurangi `sisaKuota` tepat sekali. Kunci jadwal sebelum menghitung kuota dan nomor berikutnya. |
