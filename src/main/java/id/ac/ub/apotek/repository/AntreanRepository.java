@@ -4,6 +4,10 @@ import id.ac.ub.apotek.entity.Antrean;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AntreanRepository extends JpaRepository<Antrean, String> {
+    @org.springframework.data.jpa.repository.Query(value="select a from Antrean a join fetch a.jadwal j join fetch j.dokter join fetch j.poli where a.pasien.idPasien=:pasien order by a.tglBooking desc,a.idAntrean desc",countQuery="select count(a) from Antrean a where a.pasien.idPasien=:pasien")
+    org.springframework.data.domain.Page<Antrean> riwayatPendaftaran(String pasien,org.springframework.data.domain.Pageable halaman);
+    @org.springframework.data.jpa.repository.Query(value="select a from Antrean a join fetch a.jadwal j join fetch j.dokter join fetch j.poli where a.pasien.idPasien=:pasien and a.statusAntrean='Selesai' order by case when a.waktuSelesai is null then 1 else 0 end,a.waktuSelesai desc,j.tanggal desc,a.idAntrean desc",countQuery="select count(a) from Antrean a where a.pasien.idPasien=:pasien and a.statusAntrean='Selesai'")
+    org.springframework.data.domain.Page<Antrean> riwayatKunjungan(String pasien,org.springframework.data.domain.Pageable halaman);
     @org.springframework.data.jpa.repository.Query("select a from Antrean a join fetch a.pasien where a.jadwal.idJadwal=:jadwal order by a.nomorAntrean")
     java.util.List<Antrean> daftarSesiLoket(@org.springframework.data.repository.query.Param("jadwal") String idJadwal);
     interface Kehadiran {

@@ -154,7 +154,7 @@ class ApotekApplicationTests {
 
     private Map<String,Integer> counts() {
         var counts = new LinkedHashMap<String,Integer>();
-        for (String table : List.of("Pasien","Poli","Dokter","JadwalPraktik","Antrean","JadwalVaksinasi","Notifikasi","RiwayatPelewatan","Pengguna","PanggilanAntrean")) {
+        for (String table : List.of("Pasien","Poli","Dokter","JadwalPraktik","Antrean","JadwalVaksinasi","Notifikasi","RiwayatPelewatan","Pengguna","PanggilanAntrean","VerifikasiPasien")) {
             counts.put(table, jdbc.queryForObject("SELECT COUNT(*) FROM " + table, Integer.class));
         }
         return counts;
