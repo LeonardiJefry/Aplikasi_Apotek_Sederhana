@@ -4,7 +4,22 @@ Diperbarui: 27 November 2026 (WIB). PIC seluruh tahap: Jefry (JL).
 
 ## Tahap aktif
 
-**UC-10: review - selesai pemeriksaan dan notifikasi loket tersedia pada feat/uc-10-selesai-antrean, UI mengikuti Hi-Fi 52:694 dan state 53:807. Verify macOS lulus 182 tes dan pembuatan JAR; smoke dua startup H2 UC-01 sampai UC-08 lulus; alur Selesai dan panel loket diperiksa di browser. Belum push/CI/PR/merge UC-10. SETUP-00 sampai UC-09: done melalui PR #6 sampai #15. Berikutnya QA-01, lalu DB-01 Supabase setelah QA-01 lulus dan masuk main.**
+**QA-01: review - regresi lintas peran demo H2 pada test/qa-01-integrasi-demo. SETUP-00 sampai UC-10: done melalui PR #6 sampai #16. Verify macOS lulus 183 tes dan pembuatan JAR; smoke dua startup H2 kini mencakup UC-01 sampai UC-10 dan lulus; sapuan halaman empat peran lulus. Belum push/CI/PR/merge QA-01. DB-01 Supabase dibuka setelah QA-01 lulus dan masuk main.**
+
+## QA-01 - regresi lintas peran pada demo H2
+
+Prasyarat: UC-10 merged melalui PR #16 (merge **c431b7c**, head **8163a8e**); seluruh UC-01 sampai UC-10 ada di main. Branch **test/qa-01-integrasi-demo** dibuat dari main c431b7c. Acuan: Cek demo 1-5 di docs/PROJECT.md dan kontrak. Tidak mengubah kode produksi, migrasi, seed, status atau login; tidak ada temuan regresi yang memerlukan perbaikan.
+
+- `QaDemoRegressionTests` menjalankan Cek demo 1-5 sebagai satu alur berurutan dengan jam terkendali, memakai layanan asli tiap UC dan identitas peran dari sesi: jadwal dan booking; dua pasien berebut slot terakhir secara bersamaan (tepat satu sukses, kuota nol); status sendiri dan isolasi pasien lain; pembatalan sebelum batas dan penolakan tepat 60 menit; check-in pada batas 30 menit; panggil dan hadir oleh loket; dashboard dokter (dipanggil, durasi, isolasi dokter lain); Selesai, notifikasi Tertunda idempoten dan panel loket; dua pelewatan, panggil ulang dan Tidak Hadir dengan pengembalian kuota; kuota vaksin di bawah/sama dengan peserta; pencarian NIK, riwayat kunjungan memuat pemeriksaan yang baru Selesai, verifikasi; peran keliru ditolak.
+- `scripts/smoke_demo.py` (dipakai CI) menambah UC-09 (jadwal sendiri, hitungan PC-09, snapshot pribadi, isolasi jadwal/peran) dan UC-10 (Selesai hanya Sedang Dilayani, CSRF, dokter lain 404, pengulangan 409, timestamp server, notifikasi Tertunda di panel loket, riwayat kunjungan loket). Langkah ini tidak bergantung jam nyata.
+
+| Pemeriksaan QA-01 | Hasil aktual |
+| --- | --- |
+| Tes regresi | **QaDemoRegressionTests 1 tes alur penuh lulus** pada H2 terpisah |
+| Verify macOS | `./mvnw --batch-mode --no-transfer-progress verify`: **183 tes, 0 failure/error/skipped, BUILD SUCCESS**, JAR standar dibuat; `target/qa01-verify.log` |
+| Smoke JAR | `python3 scripts/smoke_demo.py target/apotek-0.0.1-SNAPSHOT.jar`: **dua startup H2 lulus UC-01 sampai UC-10**, 36 baris PASS; `target/qa01-smoke.log` |
+| Sapuan halaman | JAR demo port 18089: 15 halaman utama pasien/loket/admin/dokter HTTP 200 tanpa galat template; peran lain ditolak sesuai prefix |
+| Tertunda | CI JDK 21 setelah push, review PR. Setelah QA-01 masuk main: DB-01 PostgreSQL Supabase (lokasi Flyway terpisah, regresi transaksi penguncian/kuota/panggilan/notifikasi) |
 
 ## UC-10 - selesai pemeriksaan dan notifikasi loket
 
