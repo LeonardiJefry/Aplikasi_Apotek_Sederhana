@@ -282,6 +282,45 @@ def check_calls(base, password):
     print("PASS UC-06: call page, future-session rejection, read-only snapshot, CSRF and role isolation")
 
 
+def check_vaccination_quota(base, password):
+    admin = client()
+    login(admin, base, "admin", password)
+    _, _, today_page = expect_status(request(admin, base, "/admin/vaksinasi"), 200, "Quota filter")
+    date = re.search(r'name="tanggal"[^>]*value="([0-9-]+)"', today_page).group(1)
+    query = urllib.parse.urlencode({"tanggal": date, "jenisVaksin": "Influenza Demo", "idJadwalVaksinasi": "VAK-001"})
+    page_url = "/admin/vaksinasi?" + query
+    public_url = "/vaksinasi/data?" + query
+    anonymous = client()
+    def snapshot():
+        _, headers, body = expect_status(request(anonymous, base, public_url), 200, "Public vaccine availability")
+        assert headers.get("Cache-Control") == "no-store"
+        assert not any(key in body for key in ('"nik":', '"nama":', '"passwordHash":'))
+        return json.loads(body)["layanan"][0]
+    initial = snapshot()
+    assert initial["kuota"] == 80 and initial["jumlahTerdaftar"] == 56 and initial["sisaKuota"] == 24
+    def change(value, expected, version=None):
+        _, _, page = expect_status(request(admin, base, page_url), 200, "Selected quota form")
+        data = {"_csrf": csrf(page), "tanggal": date, "jenisVaksin": "Influenza Demo", "idJadwalVaksinasi": "VAK-001",
+                "kuotaBaru": str(value), "versi": version or snapshot()["versi"], "jumlahTerdaftar": "0"}
+        return expect_status(request(admin, base, "/admin/vaksinasi/kuota", data), expected, "Quota change")
+    expect_status(request(admin, base, "/admin/vaksinasi/kuota", {}), 403, "Quota CSRF required")
+    change(55, 409)
+    assert snapshot()["kuota"] == 80
+    change(56, 303)
+    full = snapshot()
+    assert full["status"] == "Penuh" and full["sisaKuota"] == 0 and not full["pendaftaranDibuka"]
+    change(90, 409, initial["versi"])
+    assert snapshot()["kuota"] == 56
+    change(80, 303)
+    assert snapshot()["sisaKuota"] == 24 and snapshot()["pendaftaranDibuka"]
+    expect_status(request(anonymous, base, "/vaksinasi?" + query), 200, "Public availability page")
+    for username in ("pasien", "loket", "dokter"):
+        other = client()
+        login(other, base, username, password)
+        expect_status(request(other, base, page_url), 403, "Other role cannot manage quota")
+    print("PASS UC-07: admin quota, minimum validation, closure/reopening, stale form, public availability, CSRF and roles")
+
+
 def main():
     if len(sys.argv) != 2:
         raise SystemExit("Usage: python scripts/smoke_demo.py PATH_TO_BOOT_JAR")
@@ -327,6 +366,7 @@ def main():
                 check_check_in(base, password)
                 check_cancellation(base, password)
                 check_calls(base, password)
+                check_vaccination_quota(base, password)
                 print(f"PASS demo startup {run}: fresh working directory, H2, synthetic accounts")
             finally:
                 process.terminate()

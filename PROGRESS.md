@@ -4,7 +4,49 @@ Diperbarui: 27 November 2026 (WIB). PIC seluruh tahap: Jefry (JL).
 
 ## Tahap aktif
 
-**UC-06: review - commit b3979c3 sudah di-push oleh Jefry, PR #12 terbuka. Java CI JDK 21 lulus: 140 tes tanpa failure/error/skipped, BUILD SUCCESS; smoke dua startup JAR demo dan login/peran/CSRF serta UC-01 sampai UC-06 lulus. Browser utama dan timer V4 juga lulus. Menunggu review dan merge PR #12 ke main sebelum UC-07. SETUP-00 sampai UC-05: done melalui PR #6 sampai #11.**
+**UC-07: review - implementasi kuota admin dan ketersediaan publik tersedia pada feat/uc-07-kuota-vaksinasi. Verify lokal lulus 154 tes dan pembuatan JAR; browser desktop/mobile serta batas peran lulus. Smoke dua startup JAR H2 dan UC-01 sampai UC-07 lulus. Belum commit/push/CI/merge UC-07. SETUP-00 sampai UC-06: done melalui PR #6 sampai #12.**
+
+## UC-07 - implementasi dan verifikasi kuota vaksinasi
+
+Prasyarat diperiksa langsung: [PR #12](https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana/pull/12) **merged=true**, merge **afd2e6c830eea040d782ff74766cee7e4ba37b41**, head terakhir **8fc255ed**. Java CI [run 45919184878](https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana/actions/runs/45919184878) terkonfirmasi completed/success. Perbandingan isi 8fc255ed dengan afd2e6c8 menghasilkan `files=[]`; baseline lokal sama dengan hasil merge. UC-06 kini done. Main lokal belum di-fetch; tidak reset/clean atau mengubah berkas pribadi.
+
+Branch aktual **feat/uc-07-kuota-vaksinasi**, dibuat Jefry setelah pembuatan ref oleh agent ditolak karena .git hanya baca. HEAD awal **8fc255e**, tracked bersih; file tambahan lokal dipertahankan. Seluruh perubahan fitur masih lokal; tidak ada staging/commit/push/PR/merge oleh agent.
+
+Acuan dibaca langsung: Modul 2 UC-07 halaman 8, PC-07 halaman 79, UI-07 halaman 93-94; design context dan screenshot Hi-Fi desktop **38:238** dan mobile **38:317**. Memakai entitas/tabel JadwalVaksinasi, seed 80/56 dan 10/10, login/peran serta layout bersama. Tidak mengubah migrasi V1-V4, seed, .env, pom.xml atau konfigurasi database. Lima aset SVG Figma berhasil diunduh ke static/images/vaksinasi; URL sementara tidak dipakai saat runtime.
+
+- Admin memilih tanggal ISO dan jenis vaksin, memuat layanan, lalu mengubah kuota. Hasil tanggal/jenis ganda wajib memilih ID eksplisit; tidak otomatis memakai baris pertama. ID/date/jenis dicocokkan di server. Kuota bilangan bulat 0..2147483647 dan minimal jumlahTerdaftar terbaru.
+- Simpan mengunci baris JadwalVaksinasi, membaca jumlah peserta dari DB lalu memperbarui kuota dan pendaftaranDibuka secara atomik. Sisa nol = Penuh/false; sisa positif = Tersedia/true. Jumlah peserta tetap. Versi form mendeteksi perubahan kuota/jumlah/flag; dua admin bersamaan menghasilkan satu sukses dan satu konflik. Kegagalan tulis me-rollback kuota/flag, retry bekerja.
+- GET /admin/vaksinasi dan POST /admin/vaksinasi/kuota dibatasi admin, identitas sesi dan CSRF. Sukses 303; invalid 400; tidak ada/tidak cocok 404 pada pemilihan; konflik kuota/versi 409; DB 503 dengan pesan umum. GET/no-store tidak menulis. Batalkan memuat ulang data tersimpan. Preview JS ditandai belum disimpan; perubahan filter menonaktifkan Simpan sampai layanan dimuat ulang.
+- GET /vaksinasi dan /vaksinasi/data tersedia tanpa login, hanya angka agregat dan identitas/status layanan. Publik memperbarui ringkasan setiap 5 detik dengan timeout 8 detik dan penanda data lama. Tidak ada data pasien, NIK/noRM atau akun. Belum ada transaksi pendaftaran peserta vaksinasi pada model/roadmap; UC-07 menyediakan flag dan ketersediaannya, tanpa endpoint pendaftaran semu. Penulis peserta selanjutnya harus mengunci jadwal serta memvalidasi flag/sisa sebelum menambah jumlahTerdaftar, sesuai kontrak.
+
+| Pemeriksaan UC-07 | Hasil aktual |
+| --- | --- |
+| Tes baru terarah | **BUILD SUCCESS: 14 tes**, 11 aturan/HTTP MockMvc + 3 transaksi, 0 failure/error/skipped; target/uc07-targeted-tests.log. Cakupan: kuota minimum/lebih besar/nol/overflow, input tanggal/jenis, ID ambigu, replay/form lama, CSRF/peran, snapshot publik, dua admin bersamaan, perubahan peserta, rollback dan retry |
+| Git Bash verify agent | Proses keluar **-1073741502** sebelum ada keluaran Maven; target/uc07-bash-verify.log kosong. Tidak menyatakan Git Bash lokal berhasil dari percobaan ini |
+| Wrapper Windows offline verify | **BUILD SUCCESS: 154 tes, 0 failure, 0 error, 0 skipped**, termasuk tiga tes HTTP yang sebelumnya terhalang loopback. JAR standar target/apotek-0.0.1-SNAPSHOT.jar berhasil dibuat; **target/uc07-verify.log**. Cache Maven 3.9.16/JDK 24.0.2, compile release 21; runtime JDK 21/CI UC-07 masih perlu hasil sesudah push |
+| Paket review dan startup | Paket terpisah target/uc07-package/apotek-uc07-review.jar **BUILD SUCCESS** (packaging ini melewati tes; POM sementara di target). JAR berhasil startup normal profil demo di port **18083**, H2 V1-V4, Hibernate validate dan Tomcat; **target/uc07-package.log**, **target/uc07-startup.log**. Bukan Clock/fixture tambahan |
+| Smoke executable JAR standar | **Lulus dua startup/JVM**, python scripts/smoke_demo.py target/apotek-0.0.1-SNAPSHOT.jar; **target/uc07-smoke.log**. Enam akun/empat peran, CSRF/logout serta UC-01 sampai UC-07 lulus pada kedua startup. UC-07 memverifikasi 80/56/24, tolak 55, simpan 56 menjadi Penuh/false, tolak versi lama, kembalikan 80 menjadi Tersedia/true, halaman/snapshot publik tanpa login serta larangan akses peran lain. Tidak mengimpor .env atau memakai server MySQL; proses smoke dihentikan skrip setelah tiap run |
+| JavaScript/Python/aset | node --check vaksinasi.js, py_compile smoke_demo.py dan git diff --check lulus. Lima SVG nonkosong: info 20x20, syringe 24x24, shield 20x20, clock 16x16 dan chevron 20x20 |
+
+| Pemeriksaan browser pada executable JAR demo port 18083 | Hasil aktual |
+| --- | --- |
+| Login dan pilihan layanan | Admin login melalui form normal; link Kelola kuota vaksinasi membuka halaman. Influenza Demo hari ini menunjukkan VAK-001, kuota **80**, terdaftar **56**, sisa **24** dan Tersedia |
+| Pembatalan dan kuota minimum | Isi 70 lalu Batalkan kembali ke 80 tanpa simpan. Isi 55 ditahan validasi HTML minimum 56; penolakan POST server didukung tes/smoke tersendiri |
+| Penuh dan publik | Simpan 56 sukses: **56/56, sisa 0, Penuh, Pendaftaran ditutup**. Tab publik yang sudah terbuka ikut berubah otomatis tanpa reload manual |
+| Form lama | Tab kedua dengan versi awal 80 mengirim 90 sesudah tab pertama menyimpan 56: ditolak sebagai data telah berubah; ringkasan DB tetap 56/56 dan sisa 0 |
+| Pembukaan kembali/pemulihan | Simpan kembali 80 menghasilkan **80/56, sisa 24, Tersedia**. Setelah logout, halaman publik dapat dimuat kembali tanpa login dan menunjukkan angka yang sama |
+| Mobile dan aset | Viewport CSS aktual **390x844**, scrollWidth **371**, tanpa overflow horizontal; tombol aksi fixed dengan batas bawah **844**. Pada lebar desktop, form/ringkasan berdampingan. Empat gambar img lengkap dan ukuran alami/render sesuai 20/24/20/16; chevron SVG lokal tampil pada select |
+| Tanpa JavaScript | Script sementara dinonaktifkan dan halaman dimuat ulang: instruksi noscript tampil. Submit memakai tombol HTML asli berhasil menyimpan kuota 80 dan menampilkan pesan sukses. JavaScript dan override viewport dikembalikan |
+| Peran | Login pasien/loket/dokter masing-masing berhasil; membuka URL /admin/vaksinasi menghasilkan **Akses dibatasi**. Seluruh sesi uji logout |
+| Refresh gagal dan pulih | Blok sementara hanya request /vaksinasi/data pada tab publik menghasilkan **Pembaruan gagal. Data terakhir belum diperbarui**. Setelah blok dilepas dan reload, indikator kembali terbaru/otomatis 5 detik. Tidak ada error JS pada log publik yang diperiksa sebelum simulasi blok; blok request dikembalikan kosong |
+
+Inspeksi JAR standar setelah verify memastikan H2 runtime, KuotaVaksinasiBoundary, V4 dan kelima SVG tersedia; BrowserHarness/MutableClock/TimeFixture tidak masuk paket. Sesi proses uji port 18083 yang dimulai agent dihentikan dengan Ctrl+C setelah pemeriksaan; tidak menghentikan proses demo lain milik Jefry.
+
+Keterbatasan visual yang dipertahankan: header/sidebar/brand dan font fallback adalah fondasi proyek; tidak mengubah layout bersama atau menambahkan menu laporan/akun yang belum tersedia hanya untuk menyamai Figma. Form, ringkasan, warna, SVG, ukuran input 48px dan responsivitas mengikuti UI-07; kesamaan penuh shell/font dengan Figma tidak diklaim.
+
+Berkas fitur: controller/KuotaVaksinasiService.java; boundary/KuotaVaksinasiBoundary.java; repository/JadwalVaksinasiRepository.java; security/SecurityConfig.java; templates/vaksinasi/index.html dan fragments/vaksinasi.html; templates/index.html; static/js/vaksinasi.js, static/css/app.css, static/images/vaksinasi/{info,syringe,shield,clock,chevron}.svg; KuotaVaksinasiTests.java dan KuotaVaksinasiTransactionsTests.java; scripts/smoke_demo.py; README.md; SETUP.md; docs/KONTRAK.md; PROGRESS.md.
+
+`.env` hash tetap **B497017DB1ABDC46A88BB9BA4B333D0254A6783FE2F68FD030995DC6A3EF7B42** dan file tambahan lokal **9864E33D974948FAC45A552BA123C5F9AB7353EB7D7169D665D1BDE5D2C50769**. Helper/POM/log/paket uji berada di target dan diabaikan Git. Usulan commit **feat(uc-07): manage vaccination quotas and public availability**. Stage hanya PROGRESS.md README.md SETUP.md docs/KONTRAK.md scripts/smoke_demo.py src; commit/push/PR/merge diserahkan kepada Jefry. UC-08 menunggu UC-07 terverifikasi dan masuk main; Supabase tetap DB-01 setelah QA-01 lulus dan masuk main.
 
 ## UC-06 - commit, push dan CI PR #12
 

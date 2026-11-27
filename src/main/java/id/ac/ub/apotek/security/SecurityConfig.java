@@ -18,7 +18,8 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.authorizeHttpRequests(auth -> auth
-                .requestMatchers("/login", "/css/**", "/js/**", "/fonts/**", "/error", "/akses-ditolak").permitAll()
+                .requestMatchers("/login", "/css/**", "/js/**", "/fonts/**", "/images/**", "/error", "/akses-ditolak").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/vaksinasi", "/vaksinasi/data").permitAll()
                 .requestMatchers("/").authenticated()
                 .requestMatchers("/pasien", "/pasien/**").hasRole("PASIEN")
                 .requestMatchers("/loket", "/loket/**").hasRole("PETUGAS_LOKET")

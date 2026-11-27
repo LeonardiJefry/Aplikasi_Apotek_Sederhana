@@ -28,6 +28,16 @@ Keputusan profil dan PIC di atas menggantikan ketentuan MySQL/dev serta pembagia
 
 Perubahan bersama ini disiapkan untuk ditinjau Jefry sebagai PIC tunggal. Referensi MF/NA tetap menunjukkan kaitan PDM/fixture dan akses loket; belum menyatakan persetujuan review atau merge.
 
+## UC-07 - kuota harian vaksinasi
+
+- Memakai entitas/tabel `JadwalVaksinasi` yang sudah ada; tidak menambah migrasi atau mengubah V1-V4/seed. `jumlahTerdaftar` tersimpan adalah sumber jumlah peserta untuk UC-07 karena PDM belum memiliki tabel peserta vaksinasi. Angka ini tidak dihitung dari Antrean praktik dan tidak diterima dari form.
+- `GET /admin/vaksinasi` hanya admin, memilih tanggal ISO dan jenis vaksin. Hasil ganda ditampilkan sebagai pilihan ID eksplisit, tidak otomatis mengubah baris pertama. ID terpilih harus cocok dengan tanggal/jenis pada server; jadwal yang tidak ada ditolak. Tidak menambah jadwal baru pada UC-07.
+- `POST /admin/vaksinasi/kuota` memakai CSRF dan admin dari sesi. Kuota bilangan bulat 0..2147483647; kuota harus >= jumlahTerdaftar terbaru. Kunci baris JadwalVaksinasi sebelum membaca jumlah dan memperbarui kuota serta pendaftaranDibuka dalam satu transaksi. Sisa dihitung kuota - jumlahTerdaftar; nol menjadi Penuh/false, positif menjadi Tersedia/true. Jumlah peserta tidak berubah.
+- Form membawa versi keadaan agregat (kuota, jumlahTerdaftar, flag) untuk mendeteksi perubahan sejak dibaca. Setelah kunci, versi yang berbeda ditolak 409; dua perubahan dari formulir awal yang sama tidak saling menimpa. Versi bukan pengganti otorisasi atau jumlah peserta server. Kegagalan UPDATE me-rollback kuota dan flag; pengulangan formulir lama tidak mengubah hasil baru.
+- `GET /vaksinasi` dan `GET /vaksinasi/data` dapat dibaca tanpa login, hanya DTO layanan/angka agregat/status; tidak memuat pasien, NIK, noRM atau akun. GET read-only dan no-store. Halaman publik membaca ulang data setiap 5 detik, timeout 8 detik dan menandai kegagalan sebagai data lama. UI tidak menawarkan pendaftaran saat flag false/sisa nol. UC-07 menyediakan ketersediaan dan flag penutupan; transaksi pendaftaran peserta vaksinasi belum ada pada roadmap ini dan tidak membuat endpoint pendaftaran semu. Penulis peserta di masa depan wajib mengunci baris jadwal yang sama dan memeriksa flag serta sisa > 0 sebelum menambah peserta.
+- Sukses simpan 303 dengan flash pesan; invalid 400, jadwal tidak cocok/tidak ada 404 pada pemilihan, konflik versi/kuota/pilihan berubah 409, DB 503 dengan pesan umum, peran/CSRF 403. Batalkan berupa GET ulang keadaan tersimpan, tanpa mutasi. Tanpa JS kedua form tetap bekerja; preview JS diberi label belum disimpan dan tidak mengganti ringkasan DB.
+- UI-07 mengacu Modul 2 UC-07 halaman 8, PC-07 halaman 79, UI-07 halaman 93-94; Hi-Fi desktop 38:238/mobile 38:317. Layout/login bersama dipakai ulang, konten form dan ringkasan responsif serta tindakan mobile sticky. Aset info/syringe/shield/clock/chevron diunduh sebagai SVG lokal Figma; tidak memakai URL sementara saat runtime. DB-01 kelak menguji penguncian dan mempergunakan migrasi PostgreSQL terpisah, setelah QA-01.
+
 ## Data dan hak akses
 
 | Data | Penanggung jawab | Pemakai |
