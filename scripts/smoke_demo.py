@@ -360,6 +360,60 @@ def check_patient_verification(base, password):
     print("PASS UC-08: NIK/record/name search, patient histories, confirmation, audit actor/time, replay, CSRF and roles")
 
 
+def check_doctor_dashboard(base, password):
+    doctor = client()
+    login(doctor, base, "dokter", password)
+    _, headers, page = expect_status(request(doctor, base, "/dokter/antrean"), 200, "Doctor dashboard")
+    assert headers.get("Cache-Control") == "no-store"
+    assert "Antrean ruang periksa" in page and "Daftar antrean" in page and "A-001" in page
+    assert "DEMO-RM-002" in page and "0000000000000001" not in page and "passwordHash" not in page
+    _, headers, body = expect_status(request(doctor, base, "/dokter/antrean/data"), 200, "Doctor snapshot")
+    snapshot = json.loads(body)
+    assert headers.get("Cache-Control") == "no-store" and isinstance(snapshot["versi"], str)
+    assert [s["jadwal"]["idJadwal"] for s in snapshot["sesi"]] == ["JDW-001"]
+    assert snapshot["aktif"]["menunggu"] == 1 and snapshot["aktif"]["hadirMenunggu"] == 1
+    assert "nik" not in body and "JDW-002" not in body
+    expect_status(request(doctor, base, "/dokter/antrean?idJadwal=JDW-002"), 404, "Other doctor's schedule")
+    other = client()
+    login(other, base, "dokter2", password)
+    expect_status(request(other, base, "/dokter/antrean/data?idJadwal=JDW-001"), 404, "Doctor schedule isolation")
+    for username in ("pasien", "loket", "admin"):
+        wrong = client()
+        login(wrong, base, username, password)
+        expect_status(request(wrong, base, "/dokter/antrean"), 403, f"{username}: doctor dashboard")
+    print("PASS UC-09: own schedule per session, PC-09 waiting count, private snapshot, schedule isolation and roles")
+
+
+def check_finish_examination(base, password):
+    doctor = client()
+    login(doctor, base, "dokter", password)
+    _, _, page = expect_status(request(doctor, base, "/dokter/antrean"), 200, "Dashboard before finish")
+    action = "/dokter/antrean/JDW-001/selesai"
+    form = {"_csrf": csrf(page), "idAntrean": "ANT-DEMO0001", "waktuSelesai": "2000-01-01T00:00:00"}
+    expect_status(request(doctor, base, action, {"idAntrean": "ANT-DEMO0001"}), 403, "Finish without CSRF")
+    other = client()
+    login(other, base, "dokter2", password)
+    _, _, other_page = request(other, base, "/dokter/antrean")
+    expect_status(request(other, base, action, {"_csrf": csrf(other_page), "idAntrean": "ANT-DEMO0001"}),
+                  404, "Finish by other doctor")
+    expect_status(request(doctor, base, action, dict(form, idAntrean="ANT-DEMO0004")), 409, "Finish waiting patient")
+    expect_status(request(doctor, base, action, form), 303, "Finish serving patient")
+    expect_status(request(doctor, base, action, form), 409, "Finish replay")
+    _, _, body = expect_status(request(doctor, base, "/dokter/antrean/data"), 200, "Snapshot after finish")
+    snapshot = json.loads(body)
+    assert snapshot["aktif"]["selesai"] == 1 and snapshot["pelayanan"] is None
+    finished = snapshot["terakhir"]
+    assert finished["pasien"]["idAntrean"] == "ANT-DEMO0001" and finished["statusNotifikasi"] == "Tertunda"
+    assert finished["pasien"]["waktuSelesai"] and "2000-01-01" not in body
+    counter = client()
+    login(counter, base, "loket", password)
+    _, _, panel = expect_status(request(counter, base, "/loket/panggilan?idJadwal=JDW-001"), 200, "Counter panel")
+    assert "Notifikasi ruang periksa" in panel and "Pemeriksaan A-001 selesai" in panel and "Tertunda" in panel
+    _, _, history = expect_status(request(counter, base, "/loket/pasien/PAS-001"), 200, "Visit history after finish")
+    assert "ANT-DEMO0001" in history
+    print("PASS UC-10: serving-only finish, server timestamp, replay rejection, doctor isolation, pending counter notification and visit history")
+
+
 def main():
     if len(sys.argv) != 2:
         raise SystemExit("Usage: python scripts/smoke_demo.py PATH_TO_BOOT_JAR")
@@ -407,6 +461,8 @@ def main():
                 check_calls(base, password)
                 check_vaccination_quota(base, password)
                 check_patient_verification(base, password)
+                check_doctor_dashboard(base, password)
+                check_finish_examination(base, password)
                 print(f"PASS demo startup {run}: fresh working directory, H2, synthetic accounts")
             finally:
                 process.terminate()
