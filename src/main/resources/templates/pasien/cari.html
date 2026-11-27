@@ -1,0 +1,15 @@
+<!doctype html><html lang="id" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments/layout :: head('Data pasien')}"></head>
+<body class="pasien-page"><header th:replace="~{fragments/layout :: header}"></header><div class="app-shell"><nav th:replace="~{fragments/pasien :: menu}"></nav>
+<main class="content schedule-content"><div class="schedule-breadcrumb"><span>Pelayanan / Data pasien</span><span th:text="${username + ' · Petugas Loket'}"></span></div>
+<h1>Data pasien</h1><p class="muted">Cari identitas pasien dan tinjau riwayat kunjungannya.</p>
+<p th:if="${pesanGalat}" class="alert danger" role="alert" th:text="${pesanGalat}"></p>
+<section class="card pasien-search"><form th:action="@{/loket/pasien}" method="get">
+<div><label for="jenis">Cari berdasarkan</label><select id="jenis" name="jenis" required><option value="NIK" th:selected="${jenis == 'NIK'}">NIK</option><option value="NO_RM" th:selected="${jenis == 'NO_RM'}">Nomor rekam medis</option><option value="NAMA" th:selected="${jenis == 'NAMA'}">Nama lengkap</option></select></div>
+<div><label for="kataKunci">Kata kunci</label><input id="kataKunci" name="kataKunci" th:value="${kataKunci}" maxlength="100" required autocomplete="off" placeholder="Masukkan kata kunci"></div><button class="primary" type="submit">Cari pasien</button></form>
+<p class="help">NIK harus 16 digit. Nomor rekam medis dicocokkan persis; nama dapat dicari sebagian (minimal 2 karakter).</p></section>
+<section th:if="${hasil != null}" class="pasien-results"><h2>Hasil pencarian <span class="badge" th:text="${hasil.totalElements + ' pasien ditemukan'}"></span></h2>
+<p th:if="${hasil.isEmpty()}" class="card muted">Data pasien tidak ditemukan pada halaman ini. Periksa kata kunci atau kembali ke halaman sebelumnya.</p>
+<p th:unless="${hasil.isEmpty()}" class="help">Pilih pasien yang sesuai untuk melihat identitas, riwayat dan mencatat verifikasi.</p>
+<ul class="pasien-result-list"><li class="card" th:each="p : ${hasil.content}"><div><h3 th:text="${p.nama}"></h3><p th:text="${p.noRekamMedis}"></p><p class="help" th:text="${'NIK ' + p.nikTersamar}"></p></div><a class="button outline" th:href="@{/loket/pasien/{id}(id=${p.idPasien})}">Lihat pasien</a></li></ul>
+<nav class="pasien-pagination" aria-label="Halaman hasil pencarian"><a th:if="${hasil.hasPrevious()}" class="button outline" th:href="@{/loket/pasien(jenis=${jenis},kataKunci=${kataKunci},halaman=${hasil.number - 1})}">Sebelumnya</a><span class="help" th:text="${'Halaman ' + (hasil.number + 1)}"></span><a th:if="${hasil.hasNext()}" class="button outline" th:href="@{/loket/pasien(jenis=${jenis},kataKunci=${kataKunci},halaman=${hasil.number + 1})}">Berikutnya</a></nav></section>
+</main></div><footer th:replace="~{fragments/layout :: footer}"></footer></body></html>

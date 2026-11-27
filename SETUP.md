@@ -216,3 +216,15 @@ Build ulang dan jalankan profil demo, lalu login `admin`. Klik **Kelola kuota va
 5. Pasien/loket/dokter ditolak mengakses `/admin/vaksinasi`; POST tanpa CSRF juga ditolak. Form admin dan halaman publik tetap dapat digunakan tanpa JavaScript dengan muat ulang manual. Ringkasan adalah data tersimpan, sedangkan pratinjau input ditandai belum disimpan.
 
 UC-07 tidak menambah migrasi, mengubah seed, atau menghubungkan Supabase. Jumlah peserta memakai kolom jumlahTerdaftar pada PDM; belum ada alur pendaftaran peserta vaksinasi. Flag penutupan dan ketersediaan disediakan untuk integrasi penulis peserta selanjutnya (wajib kunci jadwal dan validasi flag/sisa). Tes transaksi menguji dua admin bersamaan, perubahan jumlah peserta, kegagalan tulis dan retry. `scripts/smoke_demo.py` memeriksa admin/public/CSRF/kuota minimum, Penuh, pembukaan kembali dan formulir lama pada dua startup JAR.
+
+## 14. Mencoba UC-08 - pencarian dan verifikasi pasien
+
+Build ulang profil demo dan login `loket`. Buka **Cari dan verifikasi pasien** atau `/loket/pasien`. Cari berdasarkan NIK **0000000000000001**, nomor rekam medis **DEMO-RM-001**, atau nama **Pasien Demo**. Dua pasien sintetis akan muncul untuk nama tersebut; pilih **Lihat pasien** yang sesuai.
+
+1. PAS-001 menunjukkan identitas sintetis, empat pendaftaran seed dan satu kunjungan Selesai (ANT-DEMO0007). PAS-002 memiliki riwayat pendaftaran sendiri dan belum memiliki kunjungan selesai. Data praktik/kunjungan berasal dari model yang sama, tanpa diagnosis atau RME baru.
+2. Buka **Lihat NIK lengkap untuk pencocokan**, cocokkan identitas, centang konfirmasi, lalu **Verifikasi identitas**. Audit menyimpan petugas sesi `loket`/USR-003 dan waktu server; reload mempertahankan catatan. Jika identitas tidak cocok, **Cari pasien lain** tanpa konfirmasi.
+3. Kirim ulang formulir yang sama: tetap satu audit dengan waktu pertama. Pencocokan baru dari halaman yang dimuat ulang memakai token baru dan dapat menghasilkan audit berikutnya. Tes juga memeriksa dua submit bersamaan, identitas berubah sejak dibaca, kegagalan INSERT/rollback dan retry.
+4. NIK bukan 16 digit, jenis kosong/tidak dikenal, kata kunci kosong atau nama terlalu pendek ditolak. Hasil kosong dan pasien tidak ditemukan memiliki pesan. Hasil/riwayat berpaginasi 20; hanya 10 audit terbaru ditampilkan. Nama/noRM bukan data pasien lain yang otomatis dipilih.
+5. Pasien/admin/dokter ditolak membuka pencarian maupun detail loket; POST tanpa CSRF atau tanpa konfirmasi ditolak. Formulir, pagination dan pembukaan NIK tetap bekerja tanpa JS. NIK di daftar tersamar, respons pribadi no-store dan referrer no-referrer.
+
+V5 membuat tabel audit VerifikasiPasien beserta FK Pasien/Pengguna; V1-V4 dan seed tidak berubah. Jangan mengedit migrasi yang sudah terpasang. Pada H2 demo, audit bertahan selama JVM hidup dan hilang setelah restart; pada MySQL opsional mengikuti persistensi database. Tidak menghubungkan PostgreSQL/Supabase. PDM belum memiliki jenis kelamin/alamat/telepon pasien, sehingga kolom contoh Figma tersebut tidak ditampilkan sebagai data rekaan.

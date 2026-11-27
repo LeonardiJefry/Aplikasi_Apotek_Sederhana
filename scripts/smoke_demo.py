@@ -321,6 +321,45 @@ def check_vaccination_quota(base, password):
     print("PASS UC-07: admin quota, minimum validation, closure/reopening, stale form, public availability, CSRF and roles")
 
 
+def check_patient_verification(base, password):
+    counter = client()
+    login(counter, base, "loket", password)
+    search = "/loket/pasien?" + urllib.parse.urlencode({"jenis": "NAMA", "kataKunci": "Pasien Demo"})
+    _, headers, results = expect_status(request(counter, base, search), 200, "Patient name search")
+    assert headers.get("Cache-Control") == "no-store"
+    assert "2 pasien ditemukan" in results and "/PAS-001" in results and "/PAS-002" in results
+    assert "0000000000000001" not in results
+    for kind, keyword in (("NIK", "0000000000000001"), ("NO_RM", "DEMO-RM-001")):
+        _, _, results = expect_status(request(counter, base, "/loket/pasien?" + urllib.parse.urlencode({"jenis": kind, "kataKunci": keyword})), 200, "Exact patient search")
+        assert "1 pasien ditemukan" in results and "/PAS-001" in results and "/PAS-002" not in results
+    expect_status(request(counter, base, "/loket/pasien?jenis=NIK&kataKunci=123"), 400, "NIK validation")
+    url = "/loket/pasien/PAS-001"
+    _, _, page = expect_status(request(counter, base, url), 200, "Patient history")
+    assert "ANT-DEMO0007" in page and "ANT-DEMO0008" not in page and "passwordHash" not in page
+    def hidden(name):
+        return html.unescape(re.search(r'name="' + name + r'"[^>]*value="([^"]+)"', page).group(1))
+    form = {"_csrf": csrf(page), "idVerifikasi": hidden("idVerifikasi"), "sidikIdentitas": hidden("sidikIdentitas"),
+            "konfirmasi": "ya", "idPetugas": "USR-004", "waktuVerifikasi": "1990-01-01T00:00:00"}
+    expect_status(request(counter, base, url + "/verifikasi", {}), 403, "Verification CSRF")
+    unconfirmed = dict(form)
+    unconfirmed.pop("konfirmasi")
+    expect_status(request(counter, base, url + "/verifikasi", unconfirmed), 400, "Identity confirmation required")
+    expect_status(request(counter, base, url + "/verifikasi", form), 303, "Identity verified")
+    expect_status(request(counter, base, url + "/verifikasi", form), 303, "Verification replay")
+    _, _, after = expect_status(request(counter, base, url), 200, "Audit after reload")
+    assert after.count("USR-003") == 1 and "USR-004" not in after and "1990-01-01T00:00:00" not in after
+    assert "Terverifikasi" in after and "loket" in after
+    _, _, other = expect_status(request(counter, base, "/loket/pasien/PAS-002"), 200, "Other patient")
+    assert "Belum ada verifikasi tercatat" in other and "ANT-DEMO0007" not in other
+    expect_status(request(counter, base, "/loket/pasien/MISSING"), 404, "Unknown patient")
+    for username in ("pasien", "admin", "dokter"):
+        other_client = client()
+        login(other_client, base, username, password)
+        expect_status(request(other_client, base, search), 403, "Patient search role isolation")
+        expect_status(request(other_client, base, url), 403, "Patient detail role isolation")
+    print("PASS UC-08: NIK/record/name search, patient histories, confirmation, audit actor/time, replay, CSRF and roles")
+
+
 def main():
     if len(sys.argv) != 2:
         raise SystemExit("Usage: python scripts/smoke_demo.py PATH_TO_BOOT_JAR")
@@ -367,6 +406,7 @@ def main():
                 check_cancellation(base, password)
                 check_calls(base, password)
                 check_vaccination_quota(base, password)
+                check_patient_verification(base, password)
                 print(f"PASS demo startup {run}: fresh working directory, H2, synthetic accounts")
             finally:
                 process.terminate()
