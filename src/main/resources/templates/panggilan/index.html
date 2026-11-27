@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments/layout :: head('Panggilan Antrean')}"></head>
+<body class="panggilan-page"><header th:replace="~{fragments/layout :: header}"></header>
+<div class="app-shell"><nav class="sidebar" aria-label="Menu loket"><p class="eyebrow">PELAYANAN LOKET</p>
+<a class="schedule-nav" th:href="@{/loket}">Ringkasan</a><a class="nav-active" th:href="@{/loket/panggilan}">Antrean pasien</a><a class="schedule-nav" th:href="@{/loket/check-in}">Peringatan check-in</a></nav>
+<main class="content schedule-content"><p class="help">Pelayanan / Antrean pasien</p><h1>Panggilan antrean</h1><p class="muted">Lewati nomor yang tidak hadir dan lanjutkan ke pasien berikutnya.</p>
+<p th:if="${pesanGalat != null}" class="alert danger" role="alert" th:text="${pesanGalat}"></p>
+<p th:if="${pesanBerhasil != null}" class="alert cancel-success" role="status" th:text="${pesanBerhasil}"></p>
+<div th:if="${snapshot != null}" th:with="s=${snapshot}">
+ <form class="card panggilan-filter" method="get" th:action="@{/loket/panggilan}" th:if="${!s.pilihan.isEmpty()}"><label for="panggilan-jadwal">Jadwal pelayanan hari ini</label>
+ <select name="idJadwal" id="panggilan-jadwal"><option th:each="j:${s.pilihan}" th:value="${j.idJadwal}" th:selected="${s.jadwal != null and j.idJadwal == s.jadwal.idJadwal}" th:text="${j.poli + ' | ' + j.dokter + ' | ' + j.sesi + ' | ' + j.jamMulai + '-' + j.jamSelesai}"></option></select><button class="outline" type="submit">Lihat Antrean</button></form>
+ <section class="card" th:if="${s.jadwal == null}"><h2>Belum ada jadwal pelayanan hari ini</h2><p>Panggilan tersedia setelah jadwal dan antrean terdaftar.</p></section>
+ <div th:if="${s.jadwal != null}" id="panggilan-workspace" th:attr="data-api-url=@{/loket/panggilan/data(idJadwal=${s.jadwal.idJadwal})},data-version=${s.versi},data-remaining=${s.sisaDetik}">
+  <p class="help" th:text="${s.jadwal.poli + ' | ' + s.jadwal.dokter + ' | ' + s.jadwal.tanggal + ' | ' + s.jadwal.jamMulai + '-' + s.jadwal.jamSelesai + ' WIB'}"></p>
+  <p th:if="${!s.jamLayanan}" class="alert danger">Di luar jam pelayanan. Panggilan, kehadiran dan pelewatan tidak dapat diproses.</p>
+  <p th:if="${s.sedangDilayani}" class="alert">Masih ada pasien Sedang Dilayani pada sesi ini. Tunggu pemeriksaan selesai sebelum panggilan berikutnya.</p>
+  <div class="panggilan-grid"><div class="panggilan-side">
+   <section class="card panggilan-current"><div class="cancel-heading"><h2>Sedang dipanggil</h2><span class="badge panggilan-called" th:if="${s.dipanggil != null}">Dipanggil</span></div>
+    <div th:if="${s.dipanggil != null}" th:with="t=${s.dipanggil}"><p class="panggilan-number" th:text="${t.nomorTampilan()}"></p><h3 th:text="${t.nama}"></h3><p class="help" th:text="${t.noRekamMedis}"></p>
+     <dl class="panggilan-details"><div><dt>Dipanggil</dt><dd id="call-time" th:text="${s.waktuPanggil + ' WIB'}"></dd></div><div><dt>Pelewatan</dt><dd th:text="${t.jumlahPelewatan + ' dari 2 kesempatan'}"></dd></div></dl>
+     <p class="alert" id="call-wait" th:classappend="${s.bolehLewati ? 'danger' : ''}" th:text="${s.bolehLewati ? 'Batas tunggu 120 detik terlewati. Pasien belum hadir.' : 'Sisa batas tunggu: ' + s.sisaDetik + ' detik. Server memeriksa kembali waktu saat tindakan dikirim.'}"></p>
+     <form method="post" class="panggilan-action" th:action="@{/loket/panggilan/{id}/hadir(id=${s.jadwal.idJadwal})}"><input type="hidden" name="idPanggilan" th:value="${s.idPanggilan}"><button class="outline" type="submit" data-call-action th:disabled="${!s.jamLayanan or s.sedangDilayani}">Pasien hadir, mulai layanan</button></form>
+     <div class="panggilan-sticky"><button class="primary" id="skip-open" type="button" hidden th:disabled="${!s.bolehLewati}">Lewati nomor antrean</button></div>
+     <p class="help">Pelewatan memerlukan konfirmasi. Nomor berikutnya otomatis dipanggil jika tersedia.</p>
+     <dialog id="skip-dialog" class="cancel-dialog" aria-labelledby="skip-title" open>
+      <p class="eyebrow">UC-06 / KONFIRMASI</p><span class="badge panggilan-called" th:text="${'Dipanggil ' + s.waktuPanggil}"></span><h2 id="skip-title" th:text="${'Lewati nomor ' + t.nomorTampilan() + '?'}"></h2>
+      <p th:text="${t.nama + ' belum hadir. Setelah 120 detik, pelewatan dapat disimpan dan nomor berikutnya dipanggil.'}"></p>
+      <p th:if="${t.jumlahPelewatan >= 2}" class="alert danger">Ini pelewatan ketiga: status menjadi Tidak Hadir dan satu kuota dikembalikan.</p>
+      <form method="post" id="skip-form" class="panggilan-action" th:action="@{/loket/panggilan/{id}/lewati(id=${s.jadwal.idJadwal})}"><input type="hidden" name="idPanggilan" th:value="${s.idPanggilan}"><input type="hidden" name="konfirmasi" value="ya">
+       <div class="cancel-actions"><a class="button outline" id="skip-back" th:href="@{/loket/panggilan(idJadwal=${s.jadwal.idJadwal})}">Batal</a><button type="button" id="skip-close" class="outline" hidden>Batal</button><button type="submit" id="skip-submit" class="primary" data-call-action th:disabled="${!s.bolehLewati}">Ya, lewati</button></div>
+      </form><noscript><p class="help">Konfirmasi ditampilkan langsung. Muat ulang setelah batas tunggu tercapai. Batal tidak mengubah antrean.</p></noscript>
+     </dialog>
+    </div>
+    <div th:if="${s.dipanggil == null}"><p>Belum ada nomor yang sedang dipanggil.</p><form class="panggilan-action" method="post" th:action="@{/loket/panggilan/{id}/panggil(id=${s.jadwal.idJadwal})}"><button type="submit" class="primary" data-call-action th:disabled="${!s.bolehPanggil}">Panggil antrean berikutnya</button></form></div>
+   </section>
+   <section class="card panggilan-next"><h2>Antrean berikutnya</h2><div th:if="${s.berikutnya != null}" th:with="n=${s.berikutnya}"><strong class="badge" th:text="${n.nomorTampilan()}"></strong><strong th:text="${n.nama}"></strong><p class="help" th:text="${n.noRekamMedis + ' | ' + n.statusAntrean}"></p><p class="help" th:if="${n.waktuCheckIn != null}" th:text="${'Check-in: ' + n.waktuCheckIn + ' WIB'}"></p></div><p th:if="${s.berikutnya == null}" class="help">Tidak ada antrean berikutnya.</p></section>
+  </div>
+  <section class="card panggilan-history"><div class="cancel-heading"><h2>Riwayat pelewatan</h2><span class="badge" th:text="${s.riwayat.size() + ' pasien'}"></span></div>
+   <table class="panggilan-table"><caption class="help">Riwayat pada jadwal pelayanan yang dipilih</caption><thead><tr><th>No.</th><th>Pasien</th><th>Terakhir dilewati</th><th>Pelewatan</th><th>Status</th></tr></thead><tbody><tr th:each="r:${s.riwayat}"><td data-label="No." th:text="${r.nomorTampilan()}"></td><td data-label="Pasien" th:text="${r.nama}"></td><td data-label="Terakhir dilewati" th:text="${r.terakhirDilewati + ' WIB'}"></td><td data-label="Pelewatan" th:text="${r.jumlahPelewatan + ' kali'}"></td><td data-label="Status"><span class="badge" th:text="${r.statusAntrean}"></span></td></tr></tbody></table>
+   <p th:if="${s.riwayat.isEmpty()}" class="help">Belum ada riwayat pelewatan.</p><p class="schedule-info">Pelewatan pertama dan kedua memberi kesempatan panggil ulang. Pelewatan ketiga mengubah status menjadi Tidak Hadir dan mengembalikan satu kuota. Panggilan ulang tersedia selama jam pelayanan.</p>
+  </section></div>
+  <div class="schedule-refresh"><p id="call-refresh-state" class="help" role="status" aria-live="polite" th:text="${'Waktu server ' + s.sekarang + ' WIB'}"></p><button id="call-refresh" class="outline" type="button" hidden>Perbarui sekarang</button></div><noscript><p class="help">Muat ulang halaman untuk memperbarui status dan batas tunggu.</p></noscript>
+ </div>
+</div><a th:if="${snapshot == null}" class="button outline" th:href="@{/loket/panggilan}">Kembali ke panggilan antrean</a>
+</main></div><footer th:replace="~{fragments/layout :: footer}"></footer><script th:src="@{/js/panggilan.js}" defer></script></body></html>

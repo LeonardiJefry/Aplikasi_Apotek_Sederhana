@@ -1,4 +1,27 @@
 /* RSI Design System: Colors 19:2, Input 22:24, Button 21:41. */
+/* UI-06: Hi-Fi desktop 89:780, mobile 89:798, confirmation 93:749. Shared shell retained. */
+.panggilan-page .panggilan-filter { padding:20px 24px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:24px 0; }
+.panggilan-page .panggilan-filter label { margin:0; }.panggilan-page select { max-width:100%; min-width:0; flex:1; height:40px; border:1px solid var(--border); border-radius:8px; padding:0 12px; background:white; color:var(--text); }
+.panggilan-page .panggilan-grid { display:grid; grid-template-columns:minmax(280px,368px) minmax(0,1fr); gap:24px; align-items:start; }
+.panggilan-page .panggilan-side { display:grid; gap:24px; min-width:0; }.panggilan-page .panggilan-grid .card { margin:0; padding:24px; border-radius:12px; min-width:0; }
+.panggilan-page h1 { font-size:28px; }.panggilan-page .card h2 { font-size:18px; margin:0; }.panggilan-page h3 { font-size:18px; margin:12px 0 0; }
+.panggilan-page .panggilan-number { font-size:48px; font-weight:600; line-height:56px; color:var(--brand); margin:24px 0 16px; }
+.panggilan-page .panggilan-called { background:#eff8ff; color:#175cd3; }.panggilan-page .panggilan-details { display:grid; grid-template-columns:1fr 1fr; gap:16px; border-top:1px solid var(--border); padding-top:16px; }
+.panggilan-page .panggilan-details dt { font-size:12px; color:var(--muted); }.panggilan-page dd { margin:4px 0 0; font-size:14px; overflow-wrap:anywhere; }
+.panggilan-page .panggilan-action { margin-top:12px; }.panggilan-page .panggilan-current > div > form button,.panggilan-page #skip-open { width:100%; }.panggilan-page .panggilan-sticky { margin-top:12px; }
+.panggilan-page .panggilan-next strong + strong { margin-left:12px; }.panggilan-page .panggilan-table { width:100%; border-collapse:collapse; text-align:left; font-size:13px; table-layout:fixed; margin:20px 0; }
+.panggilan-page .panggilan-table th { background:#f9fafb; font-size:12px; color:var(--muted); font-weight:500; }.panggilan-page .panggilan-table td,.panggilan-page .panggilan-table th { padding:12px 8px; overflow-wrap:anywhere; border-bottom:1px solid var(--border); }
+.panggilan-page .panggilan-table th:first-child { width:48px; }.panggilan-page .panggilan-table caption { text-align:left; margin-bottom:8px; }.panggilan-page .badge { white-space:normal; }
+.panggilan-page .cancel-dialog:not([data-modal]) { position:static; width:100%; max-width:none; margin-top:20px; }.panggilan-page .cancel-dialog h2 { margin:16px 0; }
+.panggilan-page [hidden] { display:none; }.panggilan-page button:disabled { opacity:.6; cursor:not-allowed; }
+@media(max-width:1100px) { .panggilan-page .panggilan-grid { grid-template-columns:1fr; } }
+@media(max-width:760px) {
+ .panggilan-page { padding-bottom:90px; }.panggilan-page .panggilan-filter { padding:16px; }.panggilan-page .panggilan-filter label,.panggilan-page .panggilan-filter select { width:100%; flex-basis:100%; }
+ .panggilan-page .panggilan-sticky { position:fixed; z-index:10; bottom:0; left:0; right:0; background:white; padding:16px; border-top:1px solid var(--border); }
+ .panggilan-page #skip-open { min-height:48px; }.panggilan-page .panggilan-table thead { display:none; }.panggilan-page .panggilan-table,.panggilan-page .panggilan-table tbody,.panggilan-page .panggilan-table tr { display:block; }
+ .panggilan-page .panggilan-table tr { border-bottom:1px solid var(--border); padding:12px 0; }.panggilan-page .panggilan-table td { display:grid; grid-template-columns:110px minmax(0,1fr); gap:8px; border:0; padding:4px 0; }
+ .panggilan-page .panggilan-table td::before { content:attr(data-label); color:var(--muted); font-size:12px; }
+}
 :root { --brand:#0f766e; --brand-hover:#115e59; --brand-soft:#f0fdfa; --text:#131927; --muted:#4b5563; --border:#e5e7eb; --radius:8px; font-family:'Poppins',system-ui,sans-serif; color:var(--text); background:#f9fafb; line-height:1.5; }
 * { box-sizing:border-box; } body { margin:0; min-height:100vh; } a { color:var(--brand); text-decoration:none; } a:hover { text-decoration:underline; }
 h1,h2 { font-weight:600; line-height:1.2; } h1 { font-size:32px; margin:16px 0; } h2 { font-size:24px; margin:16px 0; } p { margin:12px 0; }

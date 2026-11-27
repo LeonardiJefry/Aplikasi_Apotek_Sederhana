@@ -44,7 +44,7 @@ Password minimal 12 karakter dan maksimal 72 byte UTF-8. Database menyimpan hash
 | `mysql` | Opsional historis, konfigurasi DB dari `.env` |
 | `dev` lama | Tidak dipakai; pilih demo atau mysql secara eksplisit |
 
-H2 ada pada classpath runtime, termasuk saat Maven membuat executable JAR. Flyway menjalankan migrasi V1/V2 yang sudah ada; hanya placeholder `tableOptions` dikosongkan untuk H2. Hibernate memakai `ddl-auto=validate`. Jangan mengedit migrasi yang pernah dipasang atau mengubahnya menjadi `update/create`.
+H2 ada pada classpath runtime, termasuk saat Maven membuat executable JAR. Flyway menjalankan V1/V2 historis, V3 metadata panggilan UC-06, dan V4 presisi mikrodetik pada timestamp panggilan; placeholder `tableOptions` dikosongkan untuk H2. Hibernate memakai `ddl-auto=validate`. Jangan mengedit migrasi yang pernah dipasang atau mengubahnya menjadi `update/create`.
 
 Fixture mencakup 2 poli, 2 dokter, 2 pasien, 4 jadwal, 9 antrean, 2 jadwal vaksinasi, 1 notifikasi, 4 riwayat pelewatan, dan 6 akun sintetis. Seluruh delapan status kontrak tersedia. Tanggal mengikuti `Asia/Jakarta` saat database pertama kali dibuat. Seed berjalan atomik satu kali per database dengan kunci `DemoDataset`, sehingga pemanggilan ulang pada JVM yang sama mempertahankan perubahan data.
 
@@ -119,7 +119,7 @@ Seed MySQL hanya aktif jika `DEMO_ENABLED=true` dan `DEMO_PASSWORD` valid di `.e
 
 DB-01 baru dibuka setelah QA-01 lulus dan masuk main. Siapkan driver/profil PostgreSQL Supabase serta lokasi migrasi PostgreSQL terpisah. Audit tipe SQL, ekspresi NIK, casing identifier, timezone, constraint dan transaksi dari seluruh UC. Belum ada koneksi, migrasi PostgreSQL, atau kredensial Supabase yang dipasang pada SETUP-00.
 
-Login/layout tetap memakai token Design System Hi-Fi RSI yang sudah diterapkan. UC-01 sampai UC-05 tersedia seperti bagian 7-11; UI-06 sampai UI-10 menunggu tahap fitur. Font Poppins memakai fallback bila belum tersedia. Model tetap di `id.ac.ub.apotek.entity` dan repository di `id.ac.ub.apotek.repository`; jangan menduplikasi model.
+Login/layout tetap memakai token Design System Hi-Fi RSI yang sudah diterapkan. UC-01 sampai UC-06 tersedia seperti bagian 7-12; UI-07 sampai UI-10 menunggu tahap fitur. Font Poppins memakai fallback bila belum tersedia. Model tetap di `id.ac.ub.apotek.entity` dan repository di `id.ac.ub.apotek.repository`; jangan menduplikasi model.
 
 ## 7. Mencoba UC-01 — jadwal praktik dan sisa kuota
 
@@ -190,3 +190,17 @@ Halaman pasien/loket membaca ulang data setiap 5 detik, dapat diperbarui manual,
 CheckInTests dan CheckInTransactionsTests menguji kedua batas inklusif, di luar rentang dan beda hari, kepemilikan/peran, CSRF, input identitas/waktu palsu, waktu tersimpan yang tidak boleh ditimpa, kuota/nomor/tanggal booking tetap, submit serentak, rollback dan ambang peringatan. CheckInServletTests menguji jalur sukses melalui HTTP Tomcat sungguhan dengan Clock fixture terpisah. Skrip smoke JAR memakai waktu server nyata; di luar jam yang valid, penolakan adalah hasil yang benar. Clock/fixture tes tidak dipasang sebagai opsi untuk melewati aturan pada aplikasi demo normal.
 
 Acuan: Modul 2 UC-05 hlm. 7-8, PC-05 hlm. 89-91, UI-05 hlm. 105; Figma desktop `89:579`, mobile `89:597` dan peringatan loket `93:737`. Hasil aktual browser, startup dan keterbatasan visual ada di PROGRESS.md.
+
+## 12. Mencoba UC-06 - panggilan dan pelewatan antrean
+
+Build ulang aplikasi sebelum mencoba UC-06. Login sebagai `loket`, klik **Panggilan Antrean** atau buka `/loket/panggilan`, lalu pilih jadwal hari ini. GET hanya membaca; **Panggil antrean berikutnya** mengirim POST dengan CSRF. Demo JDW-001 sudah memiliki pasien Sedang Dilayani sehingga memblokir panggilan baru pada sesi itu; JDW-002 dapat dicoba selama jam praktik, sedangkan JDW-003 adalah jadwal besok pada seed normal.
+
+1. Mulai panggilan pada jadwal yang sedang buka dan tidak mempunyai pasien Sedang Dilayani. Nomor terkecil yang memenuhi syarat tampil, bersama nama/noRM sintetis, waktu server dan batas tunggu 120 detik. Reload tidak memulai ulang timer.
+2. Sebelum 120 detik, Lewati nonaktif. Setelah snapshot server mengizinkan, buka **Lewati nomor antrean**. **Batal** atau Escape menutup modal tanpa perubahan. **Ya, lewati** menyimpan status/riwayat dan otomatis memanggil kandidat berikutnya jika tersedia.
+3. Saat pasien hadir, pilih **Pasien hadir, mulai layanan**: status menjadi Sedang Dilayani tanpa riwayat pelewatan atau perubahan kuota. Tindakan selesai pemeriksaan baru disediakan UC-10; UC-06 tidak menyediakan jalan pintas mengubahnya ke Selesai.
+4. Pelewatan pertama/kedua menghasilkan Dilewati. Setelah pasien berikutnya selesai dilayani, panggilan berikutnya mendahulukan pasien Dilewati untuk kesempatan ulang. Pelewatan ketiga menghasilkan Tidak Hadir dan mengembalikan satu kuota. Jika tidak ada kandidat lain setelah pelewatan, petugas dapat memulai panggilan berikutnya sendiri selama jam pelayanan.
+5. Pengiriman form/token lama ditolak, termasuk ketika nomor yang sama sudah dipanggil ulang dengan token baru. Seluruh aturan diperiksa di server. Tes waktu dan transaksi menguji 119/120 detik, dua aksi bersamaan dan rollback kuota/riwayat/panggilan berikutnya.
+
+Halaman membaca ulang data setiap 5 detik, memiliki refresh manual dan penanda data lama. Saat gagal memperbarui, tindakan dinonaktifkan. Countdown tampilan tidak menggantikan waktu server. Di mobile, tombol Lewati berada di bawah layar dan riwayat berbentuk daftar. Tanpa JavaScript, konfirmasi tampil langsung dan pengguna memuat ulang untuk memperoleh kelayakan terbaru. Pengguna pasien/admin/dokter tidak dapat membuka prefix loket; layanan bersama dokter nanti tetap membatasi jadwal dokter sesi.
+
+V3 menambah metadata panggilan; V4 mempertahankan pecahan detik agar timer awal tidak membulat menjadi 121 detik. V1-V3 dan seed dipertahankan. Pada H2, restart JVM menghapus panggilan beserta data demo. Pada MySQL opsional, metadata timer tersimpan dan tidak diinisialisasi ulang oleh seed. Tidak ada driver/profil Supabase baru. Acuan UC-06/PC-06/UI-06 dan keputusan integrasi lengkap ada di docs/KONTRAK.md. Aset SVG Figma belum berhasil diunduh karena DNS; layout bersama dan font fallback dipertahankan, sehingga kesesuaian penuh ikon/font tidak dinyatakan lulus.
