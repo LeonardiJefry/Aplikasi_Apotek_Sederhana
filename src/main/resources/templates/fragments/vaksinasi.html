@@ -1,0 +1,6 @@
+<!doctype html><html lang="id" xmlns:th="http://www.thymeleaf.org"><body>
+<th:block th:fragment="ringkasan(j)"><span data-status class="badge" th:classappend="${j.pendaftaranDibuka ? 'schedule-available' : 'schedule-full'}" th:text="${j.status}"></span>
+<dl class="vaksinasi-metrics"><div><dd data-kuota th:text="${j.kuota}"></dd><dt>Kuota harian</dt></div><div><dd data-peserta th:text="${j.jumlahTerdaftar}"></dd><dt>Terdaftar</dt></div><div><dd data-sisa th:text="${j.sisaKuota}"></dd><dt>Sisa kuota</dt></div></dl>
+<progress th:value="${j.jumlahTerdaftar}" th:max="${j.kuota > 0 ? j.kuota : 1}" aria-label="Kuota terisi"></progress><p data-terisi class="help" th:text="${j.jumlahTerdaftar + ' dari ' + j.kuota + ' kuota sudah terisi'}"></p>
+<p data-pendaftaran class="muted" th:text="${j.pendaftaranDibuka ? j.sisaKuota + ' peserta masih dapat mendaftar pada layanan ini.' : 'Pendaftaran ditutup.'}"></p></th:block>
+</body></html>

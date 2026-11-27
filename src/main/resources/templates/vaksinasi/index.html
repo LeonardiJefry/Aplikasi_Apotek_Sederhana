@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments/layout :: head('Kuota vaksinasi')}"></head>
+<body class="vaksinasi-page">
+<header th:if="${admin}" th:insert="~{fragments/layout :: header}"></header>
+<header th:unless="${admin}" class="topbar"><a th:replace="~{fragments/layout :: brand}"></a><a class="button outline" th:href="@{/login}">Masuk</a></header>
+<div class="app-shell">
+<nav class="sidebar" aria-label="Menu utama"><p class="eyebrow" th:text="${admin ? 'ADMINISTRASI' : 'LAYANAN'}"></p>
+<a class="schedule-nav" th:href="@{/}">Beranda</a><a class="nav-active" aria-current="page" th:href="${admin ? '/admin/vaksinasi' : '/vaksinasi'}">Kuota vaksinasi</a>
+<a th:if="${admin}" class="schedule-nav" th:href="@{/vaksinasi}">Ketersediaan publik</a></nav>
+<main class="content schedule-content"><div class="schedule-breadcrumb"><span th:text="${admin ? 'Layanan / Kuota vaksinasi' : 'Layanan / Ketersediaan vaksinasi'}"></span><span th:if="${admin}" th:text="${username + ' · Admin'}"></span></div>
+<h1 th:text="${admin ? 'Kuota harian vaksinasi' : 'Ketersediaan vaksinasi'}"></h1><p class="muted" th:text="${admin ? 'Atur kapasitas layanan agar jumlah pendaftar sesuai dengan kuota yang tersedia.' : 'Pilih tanggal dan jenis vaksin untuk melihat sisa slot serta status pendaftaran.'}"></p>
+<p th:if="${pesanGalat}" class="alert danger" role="alert" th:text="${pesanGalat}"></p><p th:if="${pesanSukses}" class="alert" role="status" th:text="${pesanSukses}"></p>
+<div class="vaksinasi-grid"><section class="card vaksinasi-form"><h2 th:text="${admin ? 'Pengaturan kuota' : 'Cari layanan vaksinasi'}"></h2><p class="muted">Pilih layanan berdasarkan tanggal dan jenis vaksin.</p>
+<form method="get" th:action="${admin ? '/admin/vaksinasi' : '/vaksinasi'}" id="vaksinasi-cari">
+<div class="vaksinasi-fields"><div><label for="tanggal">Tanggal layanan</label><input id="tanggal" name="tanggal" type="date" required th:value="${tanggal}"></div>
+<div><label for="jenisVaksin">Jenis vaksin</label><select id="jenisVaksin" name="jenisVaksin" required><option value="">Pilih jenis vaksin</option><option th:each="jenis : ${pilihanJenis}" th:value="${jenis}" th:text="${jenis}" th:selected="${jenis == jenisVaksin}"></option></select></div></div>
+<button class="outline" type="submit">Muat layanan</button></form>
+<p th:if="${pesanPilihan}" class="alert" role="status" th:text="${pesanPilihan}"></p>
+<div th:if="${admin and dipilih == null and !layanan.isEmpty()}" class="vaksinasi-options"><a class="button outline" th:each="j : ${layanan}" th:href="@{/admin/vaksinasi(tanggal=${j.tanggal},jenisVaksin=${j.jenisVaksin},idJadwalVaksinasi=${j.idJadwalVaksinasi})}" th:text="${'Pilih ' + j.idJadwalVaksinasi + ' · Kuota ' + j.kuota + ' · Terdaftar ' + j.jumlahTerdaftar}"></a></div>
+<form th:if="${admin and dipilih != null}" th:action="@{/admin/vaksinasi/kuota}" method="post" id="kuota-form">
+<input type="hidden" name="idJadwalVaksinasi" th:value="${dipilih.idJadwalVaksinasi}"><input type="hidden" name="tanggal" th:value="${dipilih.tanggal}"><input type="hidden" name="jenisVaksin" th:value="${dipilih.jenisVaksin}"><input type="hidden" name="versi" th:value="${dipilih.versi}">
+<p class="help" th:text="${'Layanan dipilih: ' + dipilih.idJadwalVaksinasi + ' · ' + dipilih.tanggal + ' · ' + dipilih.jenisVaksin}"></p>
+<label for="kuotaBaru">Kuota harian</label><input id="kuotaBaru" name="kuotaBaru" type="number" required step="1" max="2147483647" th:min="${dipilih.jumlahTerdaftar}" th:value="${kuotaBaru}" aria-describedby="kuota-help kuota-preview" th:attr="data-peserta=${dipilih.jumlahTerdaftar}">
+<p id="kuota-help" class="help">Jumlah maksimum peserta untuk tanggal dan jenis vaksin yang dipilih.</p>
+<p class="schedule-info vaksinasi-info"><img th:src="@{/images/vaksinasi/info.svg}" alt=""><span th:text="${'Kuota tidak boleh kurang dari ' + dipilih.jumlahTerdaftar + ' peserta terdaftar.'}"></span></p>
+<p id="kuota-preview" class="help" aria-live="polite">Perubahan berlaku setelah disimpan.</p>
+<div class="vaksinasi-actions"><a class="button outline" th:href="@{/admin/vaksinasi(tanggal=${dipilih.tanggal},jenisVaksin=${dipilih.jenisVaksin},idJadwalVaksinasi=${dipilih.idJadwalVaksinasi})}">Batalkan perubahan</a><button class="primary" type="submit">Simpan perubahan</button></div></form>
+<p th:if="${admin and dipilih == null}" class="help">Muat dan pilih layanan sebelum mengubah kuota.</p>
+</section>
+<aside class="vaksinasi-summary" th:attr="data-publik=${!admin},data-tanggal=${tanggal},data-jenis=${jenisVaksin}"><section class="card" th:if="${dipilih != null}"><h2>Ringkasan layanan</h2>
+<p class="vaksinasi-info"><img th:src="@{/images/vaksinasi/syringe.svg}" alt=""><strong th:text="${dipilih.jenisVaksin}"></strong></p><p class="help" th:text="${dipilih.tanggal}"></p>
+<div th:replace="~{fragments/vaksinasi :: ringkasan(${dipilih})}"></div></section>
+<section class="card" th:if="${!admin}" th:each="j : ${layanan}" th:attr="data-layanan=${j.idJadwalVaksinasi}"><h2 th:text="${j.jenisVaksin}"></h2><p class="help" th:text="${j.tanggal + ' · ' + j.idJadwalVaksinasi}"></p><div th:replace="~{fragments/vaksinasi :: ringkasan(${j})}"></div></section>
+<p th:if="${!admin and layanan.isEmpty()}" class="card muted">Belum ada layanan yang ditampilkan. Pilih tanggal dan jenis vaksin, lalu tekan Muat layanan.</p>
+<p class="vaksinasi-info help"><img th:src="@{/images/vaksinasi/shield.svg}" alt="">Saat sisa kuota mencapai 0, pendaftaran layanan otomatis ditutup.</p>
+<p th:unless="${admin}" id="vaksinasi-sync" class="help" role="status">Ketersediaan diperbarui saat halaman dimuat.</p>
+</aside></div>
+<p class="vaksinasi-info help"><img th:src="@{/images/vaksinasi/clock.svg}" alt="">Perubahan berlaku setelah disimpan dan langsung memperbarui ketersediaan layanan.</p>
+<noscript><p class="help">Muat ulang layanan untuk melihat ketersediaan terbaru. Formulir dapat digunakan tanpa JavaScript.</p></noscript>
+</main></div><footer th:replace="~{fragments/layout :: footer}"></footer><script th:src="@{/js/vaksinasi.js}" defer></script>
+</body>
+</html>

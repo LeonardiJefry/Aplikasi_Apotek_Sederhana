@@ -1,4 +1,17 @@
 /* RSI Design System: Colors 19:2, Input 22:24, Button 21:41. */
+/* UI-07: desktop 38:238, mobile 38:317; shared shell retained. */
+.vaksinasi-page .vaksinasi-grid { display:grid; grid-template-columns:minmax(0,2fr) minmax(250px,1fr); gap:24px; align-items:start; }
+.vaksinasi-page .vaksinasi-grid .card { margin:0; padding:24px; border-radius:12px; min-width:0; }.vaksinasi-page .vaksinasi-form > .muted { font-size:14px; }
+.vaksinasi-page .vaksinasi-fields { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0 16px; }.vaksinasi-page input,.vaksinasi-page select { height:48px; margin:0; width:100%; min-width:0; }
+.vaksinasi-page select { appearance:none; border:1px solid var(--border); border-radius:8px; background:white url('/images/vaksinasi/chevron.svg') no-repeat right 12px center; background-size:20px 20px; padding:0 40px 0 12px; font:inherit; font-size:14px; }
+.vaksinasi-page #kuota-form { margin-top:24px; }.vaksinasi-page .vaksinasi-info { display:flex; gap:12px; align-items:start; }.vaksinasi-page .vaksinasi-info img { flex-shrink:0; }
+.vaksinasi-page .vaksinasi-actions { display:flex; gap:12px; justify-content:flex-end; padding-top:24px; border-top:1px solid var(--border); margin-top:24px; }.vaksinasi-page .vaksinasi-actions > * { min-height:48px; }
+.vaksinasi-page .vaksinasi-summary { display:grid; gap:16px; min-width:0; }.vaksinasi-page .vaksinasi-metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; border-top:1px solid var(--border); padding-top:20px; margin:20px 0; }
+.vaksinasi-page .vaksinasi-metrics dd { font-size:24px; font-weight:600; margin:0; }.vaksinasi-page .vaksinasi-metrics dt { font-size:12px; color:var(--muted); }.vaksinasi-page .vaksinasi-metrics > div:last-child dd { color:var(--brand); }
+.vaksinasi-page progress { width:100%; height:8px; border:0; border-radius:4px; background:#f3f4f6; accent-color:var(--brand); }.vaksinasi-page progress::-webkit-progress-bar { background:#f3f4f6; border-radius:4px; }.vaksinasi-page progress::-webkit-progress-value { background:var(--brand); border-radius:4px; }
+.vaksinasi-page .vaksinasi-options { display:grid; gap:12px; margin-top:16px; }.vaksinasi-page .vaksinasi-options a { overflow-wrap:anywhere; text-align:center; }.vaksinasi-page .badge { border-radius:4px; }
+@media(max-width:1100px) { .vaksinasi-page .vaksinasi-grid { grid-template-columns:1fr; } }
+@media(max-width:760px) { .vaksinasi-page { padding-bottom:96px; }.vaksinasi-page .vaksinasi-grid .card { padding:16px; }.vaksinasi-page .vaksinasi-fields { grid-template-columns:1fr; }.vaksinasi-page .vaksinasi-actions { position:fixed; z-index:10; bottom:0; left:0; right:0; margin:0; padding:16px; background:white; justify-content:stretch; }.vaksinasi-page .vaksinasi-actions > * { flex:1; font-size:13px; padding:12px 8px; }.vaksinasi-page .vaksinasi-metrics { gap:8px; } }
 /* UI-06: Hi-Fi desktop 89:780, mobile 89:798, confirmation 93:749. Shared shell retained. */
 .panggilan-page .panggilan-filter { padding:20px 24px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:24px 0; }
 .panggilan-page .panggilan-filter label { margin:0; }.panggilan-page select { max-width:100%; min-width:0; flex:1; height:40px; border:1px solid var(--border); border-radius:8px; padding:0 12px; background:white; color:var(--text); }
