@@ -4,7 +4,24 @@ Diperbarui: 27 November 2026 (WIB). PIC seluruh tahap: Jefry (JL).
 
 ## Tahap aktif
 
-**UC-09: review - dashboard antrean dokter tersedia pada feat/uc-09-dashboard-dokter. UI mengikuti Hi-Fi 50:582/51:647/53:807. Verify macOS lulus 177 tes dan pembuatan JAR; smoke dua startup H2 UC-01 sampai UC-08 lulus; pemeriksaan browser desktop/mobile dan gagal memuat lulus. Belum push/CI/PR/merge UC-09. SETUP-00 sampai UC-08: done melalui PR #6 sampai #14. Supabase tetap DB-01 setelah QA-01 lulus dan masuk main.**
+**UC-10: review - selesai pemeriksaan dan notifikasi loket tersedia pada feat/uc-10-selesai-antrean, UI mengikuti Hi-Fi 52:694 dan state 53:807. Verify macOS lulus 182 tes dan pembuatan JAR; smoke dua startup H2 UC-01 sampai UC-08 lulus; alur Selesai dan panel loket diperiksa di browser. Belum push/CI/PR/merge UC-10. SETUP-00 sampai UC-09: done melalui PR #6 sampai #15. Berikutnya QA-01, lalu DB-01 Supabase setelah QA-01 lulus dan masuk main.**
+
+## UC-10 - selesai pemeriksaan dan notifikasi loket
+
+Prasyarat: UC-09 merged melalui PR #15, merge **72f0d86**, head **cf240f7**. Branch **feat/uc-10-selesai-antrean** dibuat dari main 72f0d86. Acuan dibaca langsung: Modul 1 UR-10 (SR-18/19), Modul 2 UC-10/PC-10/UI-10 halaman 10-11, 82, 102, Modul 3 AH-SC05 dan AH-IM-010, Hi-Fi RSI desktop **52:694** (toast 52:1006, terakhir diselesaikan 52:772) dan state **53:879/53:895/53:914**. Tidak menambah entitas, migrasi, status, seed atau pengaturan login.
+
+- `PemeriksaanService.selesai`: idDokter dari sesi, kunci JadwalPraktik lalu Antrean, tiket wajib milik jadwal dokter dan berstatus Sedang Dilayani; Selesai dan waktuSelesai disimpan atomik. Pengulangan dan status lain 409 tanpa mengubah timestamp; jadwal/tiket dokter lain 404.
+- `NotifikasiLoketService`: sesudah commit status, transaksi baru membuat satu notifikasi Tertunda (demo tanpa kanal kirim, sesuai Modul 3). Kegagalan dicatat Gagal tanpa membatalkan Selesai; kirim ulang idempoten (Gagal menjadi Tertunda, tanpa baris ganda). Simulasi kegagalan: `klinik.notifikasi.simulasi-gagal`.
+- UI Hi-Fi: tombol Selesai pada kartu Pasien saat ini dan baris tabel, toast Pemeriksaan selesai, kartu besar Pasien berikutnya dengan Panggil pasien (UC-06, tanpa panggilan otomatis), kartu Terakhir diselesaikan dengan status notifikasi dan Kirim ulang, state Status tidak dapat diselesaikan, Gagal menyimpan status (Coba lagi) dan Status tersimpan, notifikasi tertunda. Loket: kartu Notifikasi ruang periksa pada /loket/panggilan, hanya membaca.
+- Berkas: PemeriksaanService, PemeriksaanException, NotifikasiLoketService, NotifikasiRepository, DashboardDokterService, DashboardDokterBoundary, PanggilanBoundary, templates/dashboarddokter/index.html, templates/panggilan/index.html, static/js/dashboard-dokter.js, app.css, PemeriksaanTests, docs/KONTRAK.md, PROGRESS.md.
+
+| Pemeriksaan UC-10 | Hasil aktual |
+| --- | --- |
+| Tes terarah | **PemeriksaanTests 5 tes lulus**: Selesai + waktuSelesai server + satu notifikasi Tertunda + pasien berikutnya siap dipanggil; pengulangan/Hadir-Menunggu/Menunggu 409 tanpa mengubah timestamp; dokter lain/jadwal lain 404, peran lain dan tanpa CSRF 403; simulasi kegagalan notifikasi tetap Selesai, dashboard dapat dimuat ulang, kirim ulang tanpa duplikasi; panel loket membaca tanpa menulis. DashboardDokterTests 8 dan PanggilanTests 14 tetap lulus |
+| Verify macOS | `./mvnw --batch-mode --no-transfer-progress verify`: **182 tes, 0 failure/error/skipped, BUILD SUCCESS**, JAR standar dibuat; `target/uc10-verify.log` |
+| Smoke JAR | Dua startup H2 UC-01 sampai UC-08 lulus; `target/uc10-smoke.log`. Skrip smoke belum memuat langkah UC-09/10 |
+| Browser | JAR demo port 18089: dokter menekan Selesai untuk A-001 pada JDW-001; toast, kartu Pasien berikutnya A-002 dengan Panggil aktif, Selesai 1, baris Selesai 10:36 dan Terakhir diselesaikan (Tertunda) tampil sesuai Hi-Fi 52:694. Loket melihat Pemeriksaan A-001 selesai · 10:36 WIB · Tertunda pada /loket/panggilan |
+| Tertunda | CI JDK 21 setelah push, langkah smoke UC-09/10, review PR, kemudian QA-01 regresi lintas peran |
 
 ## UC-09 - dashboard antrean dokter
 
@@ -28,7 +45,7 @@ Implementasi 27 November 2026 (sesi macOS, Affan). Acuan dibaca langsung: Modul 
 | Browser | JAR demo port 18089, akun dokter: desktop 1440x1024 dan mobile 375x812 dibandingkan dengan screenshot Hi-Fi; hanya JDW-001, A-001 Sedang Dilayani, Sisa antrean 1, Dilewati 1, Panggil nonaktif selama ada pasien dilayani. Server dimatikan saat halaman terbuka: banner Gagal memuat tampil, label menjadi data lama, semua tombol aksi nonaktif. Loket 403, JDW-002 milik dokter lain 404 |
 | Tertunda | CI JDK 21 setelah push, langkah smoke UC-09, review PR |
 
-Langkah berikutnya: push branch, CI, PR UC-09, lalu UC-10 `feat/uc-10-selesai-antrean` (Selesai dan notifikasi loket).
+UC-09 merged melalui PR #15 (merge 72f0d86).
 
 ## UC-08 - implementasi, CI dan pemeriksaan Windows
 

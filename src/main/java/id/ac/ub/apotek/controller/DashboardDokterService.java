@@ -22,12 +22,14 @@ public class DashboardDokterService {
     private final AntreanRepository antrean;
     private final DokterRepository dokter;
     private final PanggilanAntreanRepository metadataPanggilan;
+    private final NotifikasiRepository notifikasi;
     private final PanggilanService panggilan;
     private final CurrentUserService current;
     private final Clock clock;
     public DashboardDokterService(JadwalPraktikRepository jadwal, AntreanRepository antrean, DokterRepository dokter,
-            PanggilanAntreanRepository metadataPanggilan, PanggilanService panggilan, CurrentUserService current, Clock clock) {
-        this.jadwal=jadwal; this.antrean=antrean; this.dokter=dokter; this.metadataPanggilan=metadataPanggilan;
+            PanggilanAntreanRepository metadataPanggilan, NotifikasiRepository notifikasi, PanggilanService panggilan,
+            CurrentUserService current, Clock clock) {
+        this.jadwal=jadwal; this.antrean=antrean; this.dokter=dokter; this.metadataPanggilan=metadataPanggilan; this.notifikasi=notifikasi;
         this.panggilan=panggilan; this.current=current; this.clock=clock;
     }
 
@@ -42,9 +44,11 @@ public class DashboardDokterService {
                        boolean berlangsung, boolean dipilih) {}
     /** Pasien Sedang Dilayani pada sesi terpilih beserta waktu panggil dan lama layanan dari metadata UC-06. */
     public record Pelayanan(Baris pasien, String dipanggil, Long durasiMenit) {}
+    /** UC-10: pasien terakhir Selesai pada sesi terpilih beserta status notifikasi loket (null = belum tercatat). */
+    public record Terakhir(Baris pasien, Long durasiMenit, String statusNotifikasi) {}
     public record Snapshot(String dokter, String spesialisasi, String inisial, LocalDate tanggal, String tanggalTampilan,
                            List<Sesi> sesi, int totalMenunggu, int totalHadirMenunggu, Sesi aktif, Pelayanan pelayanan,
-                           PanggilanService.Snapshot panggilan, String sekarang, String versi) {}
+                           Terakhir terakhir, PanggilanService.Snapshot panggilan, String sekarang, String versi) {}
 
     public Snapshot snapshot(String idJadwal) {
         var idDokter=current.requireDokterId();
@@ -59,7 +63,7 @@ public class DashboardDokterService {
                 .filter(j->!now.toLocalTime().isAfter(j.getJamSelesai())).findFirst()
                 .or(()->jadwalHariIni.stream().findFirst()).map(j->j.getIdJadwal()).orElse(null);
 
-        var sesi=new ArrayList<Sesi>(); var versi=new StringBuilder(); Sesi aktif=null; Pelayanan pelayanan=null;
+        var sesi=new ArrayList<Sesi>(); var versi=new StringBuilder(); Sesi aktif=null; Pelayanan pelayanan=null; Terakhir terakhir=null;
         for(var j:jadwalHariIni) {
             List<Antrean> daftar=antrean.daftarSesiLoket(j.getIdJadwal());
             var baris=daftar.stream().map(this::baris).toList();
@@ -68,15 +72,16 @@ public class DashboardDokterService {
                     hitung(daftar,"Sedang Dilayani"),hitung(daftar,"Selesai"),hitung(daftar,"Dilewati"),
                     j.getKuotaTotal()-j.getSisaKuota(),berlangsung,j.getIdJadwal().equals(dipilih));
             sesi.add(item);
-            if(item.dipilih()) { aktif=item; pelayanan=pelayanan(j.getIdJadwal(),daftar,now); }
+            if(item.dipilih()) { aktif=item; pelayanan=pelayanan(j.getIdJadwal(),daftar,now); terakhir=terakhir(j.getIdJadwal(),daftar); }
             versi.append(j.getIdJadwal()).append(j.getSisaKuota())
                  .append(daftar.stream().map(a->a.getIdAntrean()+a.getStatusAntrean()+a.getWaktuCheckIn()+a.getWaktuSelesai()).toList());
         }
         var call=dipilih==null?null:panggilan.snapshot(dipilih);
         if(call!=null) versi.append(call.versi());
+        if(terakhir!=null) versi.append(terakhir.statusNotifikasi());
         return new Snapshot(profil.getNama(),profil.getSpesialisasi(),inisial(profil.getNama()),today,today.format(TANGGAL),
                 List.copyOf(sesi),sesi.stream().mapToInt(Sesi::menunggu).sum(),sesi.stream().mapToInt(Sesi::hadirMenunggu).sum(),
-                aktif,pelayanan,call,LocalDateTime.now(clock).format(DateTimeFormatter.ofPattern("HH:mm:ss")),
+                aktif,pelayanan,terakhir,call,LocalDateTime.now(clock).format(DateTimeFormatter.ofPattern("HH:mm:ss")),
                 Integer.toHexString(versi.toString().hashCode()));
     }
 
@@ -92,6 +97,17 @@ public class DashboardDokterService {
                 || !call.getAntrean().getIdAntrean().equals(dilayani.getIdAntrean())) return new Pelayanan(baris(dilayani),null,null);
         long menit=Math.max(0,Duration.between(call.getWaktuTutup(),now).toMinutes());
         return new Pelayanan(baris(dilayani),call.getWaktuPanggil().format(JAM),menit);
+    }
+    private Terakhir terakhir(String idJadwal,List<Antrean> daftar) {
+        var selesai=daftar.stream().filter(a->"Selesai".equals(a.getStatusAntrean()) && a.getWaktuSelesai()!=null)
+                .max(Comparator.comparing(Antrean::getWaktuSelesai).thenComparingInt(Antrean::getNomorAntrean)).orElse(null);
+        if(selesai==null) return null;
+        var call=metadataPanggilan.findById(idJadwal).orElse(null);
+        Long durasi=call!=null && "Hadir".equals(call.getHasilPanggilan()) && call.getWaktuTutup()!=null
+                && call.getAntrean().getIdAntrean().equals(selesai.getIdAntrean())
+                ? Math.max(0,Duration.between(call.getWaktuTutup(),selesai.getWaktuSelesai()).toMinutes()) : null;
+        var status=notifikasi.findFirstByAntrean_IdAntreanOrderByIdNotifikasi(selesai.getIdAntrean()).map(n->n.getStatusKirim()).orElse(null);
+        return new Terakhir(baris(selesai),durasi,status);
     }
     private int hitung(List<Antrean> daftar,String status) { return (int)daftar.stream().filter(a->status.equals(a.getStatusAntrean())).count(); }
     private Baris baris(Antrean a) {

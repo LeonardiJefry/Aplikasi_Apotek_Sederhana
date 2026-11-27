@@ -18,6 +18,11 @@
     dialog.addEventListener('cancel',event=>{ if(submitting) event.preventDefault(); });
   }
 
+  // Toast UC-10 dapat ditutup di halaman lokal tanpa mengubah server.
+  const toast=document.getElementById('dk-toast');
+  const toastClose=toast && toast.querySelector('.dk-toast-close');
+  if(toastClose) { toastClose.hidden=false; toastClose.addEventListener('click',()=>{ toast.hidden=true; }); }
+
   function stale(text) {
     if(live) { live.classList.add('dk-live-stale'); liveText.textContent=text; }
     if(offline) offline.hidden=false;
