@@ -4,7 +4,55 @@ Diperbarui: 27 November 2026 (WIB). PIC seluruh tahap: Jefry (JL).
 
 ## Tahap aktif
 
-**UC-07: review - implementasi kuota admin dan ketersediaan publik tersedia pada feat/uc-07-kuota-vaksinasi. Verify lokal lulus 154 tes dan pembuatan JAR; browser desktop/mobile serta batas peran lulus. Smoke dua startup JAR H2 dan UC-01 sampai UC-07 lulus. Belum commit/push/CI/merge UC-07. SETUP-00 sampai UC-06: done melalui PR #6 sampai #12.**
+**UC-09: review - dashboard antrean dokter tersedia pada feat/uc-09-dashboard-dokter. UI mengikuti Hi-Fi 50:582/51:647/53:807. Verify macOS lulus 177 tes dan pembuatan JAR; smoke dua startup H2 UC-01 sampai UC-08 lulus; pemeriksaan browser desktop/mobile dan gagal memuat lulus. Belum push/CI/PR/merge UC-09. SETUP-00 sampai UC-08: done melalui PR #6 sampai #14. Supabase tetap DB-01 setelah QA-01 lulus dan masuk main.**
+
+## UC-09 - dashboard antrean dokter
+
+Prasyarat UC-08 diperiksa kembali: [PR #14](https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana/pull/14) merged, merge **e3129fd659c4ded6eb4c02e81e5790bb979b63c5**, head **d50fc855bfc502b46bfae17cba13a1ce82f86406**. Compare head lokal dengan main menghasilkan `files=[]`. Branch **feat/uc-09-dashboard-dokter** dibuat dari main **e3129fd**; status branch sudah diperiksa. Perubahan lokal, `.env` dan file tambahan pribadi dipertahankan.
+
+Acuan: kartu AH, Modul 2 UC-09/PC-09/UI-09 (halaman PDF 9, 81, 100), design context dan screenshot Hi-Fi desktop **50:582** / mobile **51:647**. Lingkup: jadwal dokter hari ini dikelompokkan per sesi, nomor/nama/noRM/status/check-in, hitungan Menunggu, keadaan tanpa jadwal/antrean, polling dan panggil/hadir/lewati melalui PanggilanService UC-06. Hitungan utama mengikuti PC-09 persis status **Menunggu**; **Hadir/Menunggu** ditampilkan terpisah. Selesai/notifikasi loket adalah UC-10. Ruang, jenis kelamin dan umur pada contoh desain tidak dikarang dari model yang belum menyimpannya.
+
+Implementasi 27 November 2026 (sesi macOS, Affan). Acuan dibaca langsung: Modul 1 UR-09 (SR-16/17), Modul 2 UC-09/PC-09/UI-09 halaman 9-10, 81, 100, Modul 3 AH-SC05 dan AH-IM-009, serta Hi-Fi RSI desktop **50:582**, mobile **51:645/51:647** dan state **53:807**. Isi halaman mengikuti Hi-Fi; layout bersama (topbar/sidebar) dipertahankan seperti UI-07/08. Tidak menambah entitas, migrasi, status, seed atau pengaturan login.
+
+- `DashboardDokterService` membaca idDokter dari sesi (`requireDokterId`), jadwal dokter pada tanggal server Asia/Jakarta, dan mengelompokkan antrean per sesi. Kartu Sisa antrean = persis status Menunggu (PC-09); Hadir/Menunggu ditulis terpisah, Selesai dan Dilewati punya kartu sendiri. Tanpa NIK, tanggal lahir atau data akun.
+- UI Hi-Fi: kartu jadwal praktik (poli/sesi, jam, kuota dan terdaftar), kartu Sisa antrean/Selesai/Dilewati, panel Pasien saat ini (Sedang Dilayani, waktu dipanggil dan durasi dari metadata UC-06 bila tersedia), panel pasien dipanggil dengan Pasien hadir dan dialog Tandai dilewati, panel Pasien berikutnya dengan Panggil pasien, tabel No./Pasien/Check-in/Status/Aksi dengan badge berwarna dan baris aktif. Mobile: metrik tiga kolom dalam satu kartu dan daftar berbentuk kartu. State: tanpa jadwal, antrean kosong (memantau otomatis), gagal memuat dengan Muat ulang. Ikon SVG Figma disimpan di `static/images/dokter`.
+- Panggil/hadir/lewati memakai `PanggilanService` UC-06 tanpa logika kedua. Jadwal dokter lain atau hari lain 404, ID tidak valid 400, aksi tidak dikenal 400, konflik 409. Respons no-store/no-referrer. Polling 5 detik, timeout 8 detik; perubahan versi karena booking/check-in/panggilan/status memuat ulang halaman.
+- Tidak dibuat: menu Riwayat periksa (belum ada fitur), jenis kelamin/umur dan nama ruang periksa (PDM tidak menyimpannya). Tombol Selesai pada Hi-Fi adalah UC-10 dan dikerjakan di branch `feat/uc-10-selesai-antrean`.
+- Berkas: DashboardDokterService, DashboardDokterBoundary, templates/dashboarddokter/index.html, static/js/dashboard-dokter.js, static/images/dokter/*.svg, app.css, templates/index.html, DashboardDokterTests, docs/KONTRAK.md, PROGRESS.md. Koreksi CSS mobile UC-08 `.pasien-history td > * { grid-column:2; }` disertakan.
+
+| Pemeriksaan UC-09 | Hasil aktual |
+| --- | --- |
+| Tes terarah | **DashboardDokterTests 8 tes lulus**: jadwal sendiri per sesi dan hitungan PC-09, Dilewati/terdaftar, multi-sesi/sesi kosong/pemilihan otomatis, tanpa jadwal, perubahan versi saat booking dan check-in, waktu dipanggil/durasi/waktu selesai dari data tersimpan, jadwal dokter lain/hari lain 404, peran lain ditolak, JSON no-store tanpa NIK/hash, panggil/hadir/lewati melalui UC-06 dengan CSRF dan pelaku dari sesi |
+| Verify macOS | `./mvnw --batch-mode --no-transfer-progress verify`: **177 tes, 0 failure/error/skipped, BUILD SUCCESS**, JAR standar dibuat; JDK 24.0.2 compile release 21; `target/uc09-verify.log`. Salinan macOS `* 2.*` lama di `target/` dihapus sebelum build karena mengganggu repackage; source tidak terdampak |
+| Smoke JAR | `python3 scripts/smoke_demo.py target/apotek-0.0.1-SNAPSHOT.jar` lulus dua startup H2 UC-01 sampai UC-08; `target/uc09-smoke.log`. Skrip smoke belum memuat langkah UC-09 |
+| Browser | JAR demo port 18089, akun dokter: desktop 1440x1024 dan mobile 375x812 dibandingkan dengan screenshot Hi-Fi; hanya JDW-001, A-001 Sedang Dilayani, Sisa antrean 1, Dilewati 1, Panggil nonaktif selama ada pasien dilayani. Server dimatikan saat halaman terbuka: banner Gagal memuat tampil, label menjadi data lama, semua tombol aksi nonaktif. Loket 403, JDW-002 milik dokter lain 404 |
+| Tertunda | CI JDK 21 setelah push, langkah smoke UC-09, review PR |
+
+Langkah berikutnya: push branch, CI, PR UC-09, lalu UC-10 `feat/uc-10-selesai-antrean` (Selesai dan notifikasi loket).
+
+## UC-08 - implementasi, CI dan pemeriksaan Windows
+
+UC-07 sudah merged melalui [PR #13](https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana/pull/13), merge **557820bf976f2462f6d769cb86607a1ca2e5f302**. CI [45922550739](https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana/actions/runs/45922550739) lulus **154 tes** dan smoke dua JVM. Catatan UC-07 di bawah adalah riwayat sebelum integrasi tersebut.
+
+Jefry commit UC-08 **d50fc855**, pesan `feat(uc-08): add patient search and verification audit`; author/committer telah diperiksa. [PR #14](https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana/pull/14) merged. CI [45924527460](https://github.com/LeonardiJefry/Aplikasi_Apotek_Sederhana/actions/runs/45924527460), job **140262667891**, memakai JDK 21: **169 tes, 0 failure/error/skipped, BUILD SUCCESS**, serta smoke dua startup UC-01 sampai UC-08. Tidak ada commit/push/merge oleh agent.
+
+- Pencarian NIK tepat 16 digit, noRM persis dan nama sebagian tanpa membedakan kapital; wildcard nama literal; hasil 20 per halaman dengan pemilihan pasien eksplisit. Hasil tidak membuka NIK lengkap.
+- Detail identitas, pendaftaran seluruh status, kunjungan hanya Antrean Selesai, dan 10 audit terbaru; semua query dibatasi pasien terpilih. Tidak menambah RME/diagnosis atau identitas yang tidak ada di PDM.
+- V5 menambah audit VerifikasiPasien (UUID, FK pasien/petugas, waktu mikrodetik, status dan sidik SHA-256). Konfirmasi wajib, pelaku/waktu dari server, CSRF, kunci pasien, deteksi identitas berubah, replay idempotent dan rollback/retry. V1-V4 serta seed tidak diubah. Akses hanya loket pada HTTP dan layanan, HTML pribadi no-store/no-referrer.
+- Berkas: VerifikasiPasienBoundary/Service, entity/repository VerifikasiPasien, PasienRepository/AntreanRepository, V5, templates pasien/cari/detail dan fragments/pasien, app.css, dua SVG pasien, VerifikasiPasienTests/TransactionsTests, ApotekApplicationTests, smoke_demo.py, README/SETUP/KONTRAK.
+
+| Pemeriksaan | Hasil aktual |
+| --- | --- |
+| Tes Windows | **169 tes lulus**, BUILD SUCCESS, JDK 24.0.2 compile release 21, wrapper offline/cache Maven; `target/uc08-verify.log`. Tes terarah awal 12 lulus |
+| Git Bash Windows | Proses keluar **-1073741502** sebelum Maven, log kosong `target/uc08-bash-verify.log`; tidak diklaim berhasil. Verifikasi Bash/JDK 21 standar sudah dibuktikan CI |
+| Startup Windows | JAR standar profil demo port 18084 berhasil, H2 V1-V5, Hibernate validate dan Tomcat; `target/uc08-startup.log`. Restart pemeriksaan 27 November juga berhasil, `target/uc08-browser-recheck.log` |
+| Smoke Windows | `target/uc08-smoke.log`: **dua startup/JVM lulus**, enam akun/empat peran, CSRF/logout serta UC-01 sampai UC-08; hasil akhir log telah diperiksa pada sesi Windows yang tersambung kembali |
+| Saat workspace Windows terputus | Workspace Linux sementara: 169 tes lulus dengan source/target 21 karena runtime setempat tidak memiliki ct.sym untuk release; POM repo tetap. Smoke dua JVM UC-01 sampai UC-08 lulus. Browser cloud gagal menjangkau localhost; hasil ini terpisah dari CI standar dan startup Windows |
+| Browser alur | Login loket, pencarian NIK/noRM/nama, pilihan tunggal/ganda, empat pendaftaran dan satu kunjungan PAS-001, penolakan tanpa centang, penyimpanan dan reload audit sudah diamati. Pemeriksaan ulang menyimpan satu audit loket/USR-003 pada **2026-11-27T09:25:36.139462 WIB** |
+| Browser peran | Pada pemeriksaan ulang Windows, pasien/admin/dokter masing-masing ditolak membuka `/loket/pasien` dengan halaman Akses dibatasi; sesi uji diakhiri logout |
+| Visual | Screenshot desktop detail berhasil dilihat pada sesi yang tersambung kembali. Screenshot setelah override mobile masih timeout; pengukuran DOM menunjukkan teks small pada tabel mobile bisa masuk kolom label. Koreksi CSS `td > * { grid-column:2; }` disertakan pada branch UC-09 dan perlu dicek kembali saat runtime baru tersedia; kesamaan visual mobile penuh belum diklaim |
+
+UC-08 inti sudah terverifikasi dan masuk main. Temuan kecil tampilan mobile ditindaklanjuti pada UC-09. `.env` tetap SHA256 **B497017DB1ABDC46A88BB9BA4B333D0254A6783FE2F68FD030995DC6A3EF7B42**, file tambahan lokal tetap **9864E33D974948FAC45A552BA123C5F9AB7353EB7D7169D665D1BDE5D2C50769**. Tidak mengubah profil/CI/server database; PostgreSQL baru DB-01.
 
 ## UC-07 - implementasi dan verifikasi kuota vaksinasi
 
