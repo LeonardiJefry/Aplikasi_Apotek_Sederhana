@@ -12,6 +12,7 @@ public class Pasien {
     private String idPasien;
 
     @Column(name = "nik", nullable = false, length = 16, columnDefinition = "CHAR(16)")
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.CHAR) // PDM CHAR(16); divalidasi sama di H2/MySQL/PostgreSQL.
     private String nik;
 
     @Column(name = "noRekamMedis", nullable = false, length = 20)

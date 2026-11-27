@@ -4,7 +4,25 @@ Diperbarui: 27 November 2026 (WIB). PIC seluruh tahap: Jefry (JL).
 
 ## Tahap aktif
 
-**QA-01: review - regresi lintas peran demo H2 pada test/qa-01-integrasi-demo. SETUP-00 sampai UC-10: done melalui PR #6 sampai #16. Verify macOS lulus 183 tes dan pembuatan JAR; smoke dua startup H2 kini mencakup UC-01 sampai UC-10 dan lulus; sapuan halaman empat peran lulus. Belum push/CI/PR/merge QA-01. DB-01 Supabase dibuka setelah QA-01 lulus dan masuk main.**
+**DB-01: review - profil PostgreSQL Supabase pada chore/db-01-supabase. SETUP-00 sampai QA-01: done melalui PR #6 sampai #17. Migrasi PostgreSQL V1-V6, skema klinik ber-RLS dan seluruh smoke UC-01 sampai UC-10 lulus pada PostgreSQL 17 lokal; verify macOS 193 tes (183 H2 + 10 PostgreSQL) lulus. Belum push/CI/PR/merge DB-01. Project Supabase tim belum dibuat; koneksi Supabase nyata menunggu pemilik kredensial.**
+
+## DB-01 - PostgreSQL Supabase
+
+Prasyarat: QA-01 merged melalui PR #17 (merge **40e4be7**, head **929d011**). Branch **chore/db-01-supabase** dibuat dari main 40e4be7. Project Supabase tim belum ada; pengujian memakai PostgreSQL 17 lokal (Docker `postgres:17-alpine`, port 127.0.0.1:55432, password acak sementara), sama dengan mesin Supabase. Tidak ada kredensial Supabase pada repo atau sesi ini.
+
+- Profil `supabase` (`application-supabase.properties`): driver PostgreSQL, `SUPABASE_DB_*` dari environment/.env, Session pooler port 5432, `sslmode=require`, skema `klinik` (`currentSchema`, Flyway `schemas/default-schema/create-schemas`, Hibernate `default_schema`), Hikari maksimal 5. Seed sintetis hanya bila `DEMO_ENABLED=true` (DemoDataService/Initializer kini juga mengizinkan profil supabase).
+- `db/migration-postgresql` V1-V5 setara migrasi MySQL/H2 dengan tipe PostgreSQL; V6 Row Level Security tanpa policy pada 12 tabel. Migrasi MySQL/H2 `db/migration` tidak diubah. `pom.xml` menambah `org.postgresql:postgresql` (runtime) dan `flyway-database-postgresql` versi BOM Spring Boot.
+- Temuan saat validasi: Hibernate menolak `nik` CHAR(16) pada PostgreSQL (bpchar vs VARCHAR). `Pasien.nik` dan `VerifikasiPasien.sidikIdentitas` kini `@JdbcTypeCode(SqlTypes.CHAR)`; H2/MySQL tetap lulus. Tidak ada SQL native khusus MySQL pada kode aplikasi; JPQL `(:param is null or ...)` berjalan karena parameter terikat bertipe.
+- Tes PostgreSQL (aktif bila `KLINIK_PG_URL` diisi, skema acak per kelas, dihapus sesudahnya): `PostgresqlSchemaConcurrencyTests` (versi V6, 12 tabel ber-RLS di skema privat, TIMESTAMP(6), constraint NIK/status/kuota/nomor/notifikasi, 8 booking bersamaan pada kuota 3 = 3 sukses dan nomor 1-3, 4 Selesai bersamaan = 1 sukses, 4 panggil bersamaan = 1 sukses), `PostgresqlQaDemoTests` (Cek demo 1-5), `PostgresqlPemeriksaanTests` (UC-10). CI menambah service `postgres:17-alpine` khusus runner dan variabel `KLINIK_PG_*`.
+- Dokumen: SETUP bagian 6 (langkah Supabase, Session pooler, Exposed schemas, regresi lokal), README profil, `.env.example` (placeholder `SUPABASE_DB_*`), KONTRAK DB-01.
+
+| Pemeriksaan DB-01 | Hasil aktual |
+| --- | --- |
+| Startup profil supabase | JAR dengan `--spring.profiles.active=supabase` ke PostgreSQL 17.12 lokal (`sslmode=disable` hanya lokal): Flyway V1-V6 pada skema `klinik`, Hibernate validate dan Tomcat berhasil, seed opt-in 6 akun/9 antrean; `target/db01-startup.log` |
+| Smoke pada PostgreSQL | Seluruh fungsi `scripts/smoke_demo.py` UC-01 sampai UC-10 dijalankan ke aplikasi profil supabase: semua PASS |
+| Tes PostgreSQL | 10 tes lulus (4 skema/konkurensi, 1 Cek demo 1-5, 5 UC-10); tanpa `KLINIK_PG_URL` ke-10 tes dilewati |
+| Verify macOS | Dengan `KLINIK_PG_URL`: **193 tes, 0 failure/error/skipped, BUILD SUCCESS**, JAR dibuat; `target/db01-verify.log`. Smoke H2 dua startup UC-01 sampai UC-10 lulus (36 PASS); `target/db01-smoke.log` |
+| Tertunda | CI dengan service PostgreSQL setelah push; pembuatan project Supabase dan start pertama oleh pemilik kredensial (SETUP bagian 6); pemeriksaan Exposed schemas di dashboard Supabase |
 
 ## QA-01 - regresi lintas peran pada demo H2
 

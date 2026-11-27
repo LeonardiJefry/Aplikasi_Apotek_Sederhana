@@ -12,7 +12,8 @@ public class VerifikasiPasien {
     @ManyToOne(fetch=FetchType.LAZY,optional=false) @JoinColumn(name="idPetugas",nullable=false) private Pengguna petugas;
     @Column(name="waktuVerifikasi",nullable=false,columnDefinition="DATETIME(6)") private LocalDateTime waktuVerifikasi;
     @Column(name="statusVerifikasi",length=20,nullable=false) private String statusVerifikasi;
-    @Column(name="sidikIdentitas",length=64,nullable=false,columnDefinition="CHAR(64)") private String sidikIdentitas;
+    @Column(name="sidikIdentitas",length=64,nullable=false,columnDefinition="CHAR(64)")
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.CHAR) private String sidikIdentitas;
     protected VerifikasiPasien() {}
     public VerifikasiPasien(String id,Pasien pasien,Pengguna petugas,LocalDateTime waktu,String sidik) {
         this.idVerifikasi=id; this.pasien=pasien; this.petugas=petugas;

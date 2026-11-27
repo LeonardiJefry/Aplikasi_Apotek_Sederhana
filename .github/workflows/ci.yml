@@ -19,6 +19,20 @@ jobs:
     name: Build dan Test
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # DB-01: PostgreSQL sementara khusus runner CI untuk regresi migrasi/transaksi (bukan Supabase, tanpa data nyata).
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: klinik
+          POSTGRES_PASSWORD: klinik-ci-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d klinik"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
     steps:
       - name: Ambil kode
         uses: actions/checkout@v7.0.1
@@ -28,7 +42,11 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - name: Build dan test dengan H2
+      - name: Build dan test dengan H2 dan PostgreSQL
+        env:
+          KLINIK_PG_URL: jdbc:postgresql://127.0.0.1:5432/klinik
+          KLINIK_PG_USER: postgres
+          KLINIK_PG_PASSWORD: klinik-ci-only
         run: ./mvnw --batch-mode --no-transfer-progress verify
       - name: Startup dan login demo dari JAR runtime
         run: python3 scripts/smoke_demo.py target/apotek-0.0.1-SNAPSHOT.jar
