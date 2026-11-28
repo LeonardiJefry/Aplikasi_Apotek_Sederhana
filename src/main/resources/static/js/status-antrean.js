@@ -64,13 +64,13 @@
       option.selected = ticket.idAntrean === pendingChoice; options.append(option);
     }
     select.replaceChildren(options);
-    action('queue-cancel', detail.bolehBatal, 'pembatalan');
+    action('queue-cancel', detail.bolehBukaBatal, 'pembatalan');
     action('queue-checkin', detail.bolehCheckIn, 'check-in');
   }
   async function refresh() {
     if (busy) return;
     clearTimeout(timer);
-    if (document.hidden) { timer = setTimeout(refresh, 5000); return; }
+    if (document.hidden) { timer = setTimeout(refresh, 3000); return; }
     busy = true; refreshButton.disabled = true;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
@@ -90,12 +90,12 @@
     } catch { stale('Pembaruan gagal. Data terakhir belum diperbarui. Silakan coba lagi.'); }
     finally {
       clearTimeout(timeout); busy = false; refreshButton.disabled = false;
-      timer = setTimeout(refresh, 5000);
+      timer = setTimeout(refresh, 3000);
     }
   }
   refreshButton.addEventListener('click', refresh);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
   window.addEventListener('pagehide', () => clearTimeout(timer));
   window.addEventListener('pageshow', event => { if (event.persisted) refresh(); });
-  timer = setTimeout(refresh, 5000);
+  timer = setTimeout(refresh, 3000);
 })();

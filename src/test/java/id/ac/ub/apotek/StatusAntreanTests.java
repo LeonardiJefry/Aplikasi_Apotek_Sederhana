@@ -167,6 +167,9 @@ class StatusAntreanTests {
         LocalDate date = jdbc.queryForObject("SELECT tanggal FROM JadwalPraktik WHERE idJadwal='JDW-003'", LocalDate.class);
         assertThat(at(date.atTime(6,59)).snapshot("ANT-DEMO0006").dipilih().bolehBatal()).isTrue();
         assertThat(at(date.atTime(7,0)).snapshot("ANT-DEMO0006").dipilih().bolehBatal()).isFalse();
+        // AD-04 alur D1/D2: tombol tetap dapat dibuka pada batas 60 menit; penolakan terjadi setelah konfirmasi.
+        assertThat(at(date.atTime(7,0)).snapshot("ANT-DEMO0006").dipilih().bolehBukaBatal()).isTrue();
+        assertThat(at(date.atTime(7,0)).snapshot("ANT-DEMO0001").dipilih().bolehBukaBatal()).isFalse();
         for (LocalTime time : java.util.List.of(LocalTime.of(7,30), LocalTime.of(14,0)))
             assertThat(at(date.atTime(time)).snapshot("ANT-DEMO0006").dipilih().bolehCheckIn()).isTrue();
         for (LocalDateTime time : java.util.List.of(date.atTime(7,29,59), date.atTime(14,0,1), date.minusDays(1).atTime(8,0)))

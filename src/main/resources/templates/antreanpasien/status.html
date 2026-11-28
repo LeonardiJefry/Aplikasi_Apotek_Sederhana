@@ -48,7 +48,7 @@
         <div class="queue-actions">
           <a id="queue-receipt" class="button outline" th:href="@{/pasien/booking/tiket/{id}(id=${d.idAntrean})}">Lihat Tiket Booking</a>
           <a id="queue-checkin" class="button primary queue-action" th:href="${d.bolehCheckIn} ? @{/pasien/antrean/{id}/check-in(id=${d.idAntrean})} : null" th:attr="aria-disabled=${!d.bolehCheckIn},tabindex=${d.bolehCheckIn ? 0 : -1}">Check-in</a>
-          <a id="queue-cancel" class="button outline queue-action" th:href="${d.bolehBatal} ? @{/pasien/antrean/{id}/pembatalan(id=${d.idAntrean})} : null" th:attr="aria-disabled=${!d.bolehBatal},tabindex=${d.bolehBatal ? 0 : -1}">Batalkan Antrean</a>
+          <a id="queue-cancel" class="button outline queue-action" th:href="${d.bolehBukaBatal} ? @{/pasien/antrean/{id}/pembatalan(id=${d.idAntrean})} : null" th:attr="aria-disabled=${!d.bolehBukaBatal},tabindex=${d.bolehBukaBatal ? 0 : -1}">Batalkan Antrean</a>
         </div>
         <p class="help">Pembatalan memerlukan waktu lebih dari 60 menit sebelum praktik dan konfirmasi Anda. Check-in mandiri tersedia untuk tiket Terdaftar pada hari kunjungan dari 30 menit sebelum mulai sampai jam selesai.</p>
       </div>

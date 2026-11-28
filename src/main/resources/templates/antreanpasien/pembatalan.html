@@ -15,12 +15,12 @@
         <dt>Nomor antrean Anda</dt><dd th:text="${tiket.nomorTampilan()}"></dd><dt>Nomor sedang dilayani</dt><dd th:text="${tiket.nomorSekarang()}"></dd><dt>Sisa antrean</dt><dd th:text="${tiket.sisaTampilan()}"></dd><dt>Sisa kuota jadwal</dt><dd id="cancel-quota" th:text="${j.sisaKuota + ' dari ' + j.kuotaTotal}"></dd></dl>
       <p class="cancel-policy">Pembatalan hanya dapat dilakukan lebih dari 60 menit sebelum jam mulai praktik dan dari status yang diizinkan.</p>
       <div class="cancel-actions"><a class="button outline" th:href="@{/pasien/antrean/{id}(id=${tiket.idAntrean})}">Kembali ke Status Antrean</a>
-        <button th:if="${tiket.bolehBatal and berhasil != true and pesanGalat == null}" id="cancel-open" type="button" class="cancel-danger" hidden>Batalkan Antrean</button>
+        <button th:if="${tiket.bolehBukaBatal and berhasil != true and pesanGalat == null}" id="cancel-open" type="button" class="cancel-danger" hidden>Batalkan Antrean</button>
         <a th:if="${berhasil == true}" class="button primary" th:href="@{/pasien/jadwal(tanggal=${j.tanggal.toString()},idPoli=${j.idPoli},idDokter=${j.idDokter})}">Lihat Kuota Jadwal</a>
       </div>
     </section>
     <aside class="card"><h2>Informasi Penting</h2><p>Pembatalan harus dilakukan lebih dari 60 menit sebelum jam mulai praktik.</p><hr><p>Setelah pembatalan berhasil, status antrean berubah menjadi Dibatalkan.</p><hr><p>Satu kuota pada jadwal praktik dikembalikan ke sistem.</p></aside>
-    <dialog th:if="${tiket.bolehBatal and berhasil != true and pesanGalat == null}" id="cancel-dialog" class="cancel-dialog" aria-labelledby="cancel-title" aria-describedby="cancel-description" open>
+    <dialog th:if="${tiket.bolehBukaBatal and berhasil != true and pesanGalat == null}" id="cancel-dialog" class="cancel-dialog" aria-labelledby="cancel-title" aria-describedby="cancel-description" open>
       <div class="cancel-warning-symbol" aria-hidden="true">!</div><h2 id="cancel-title">Batalkan Antrean?</h2>
       <p id="cancel-description" th:text="${'Apakah Anda yakin ingin membatalkan antrean ' + j.poli + ' dengan nomor ' + tiket.nomorTampilan() + '? Kuota akan dikembalikan setelah pembatalan berhasil.'}"></p>
       <p class="alert danger">Pembatalan hanya dapat diproses jika waktu tersisa masih lebih dari 60 menit. Status dan waktu diperiksa kembali saat Anda mengonfirmasi.</p>

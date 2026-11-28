@@ -26,7 +26,7 @@ public class PembatalanBoundary {
             if (request.getRequestURI().endsWith("/hasil")) {
                 if (!tiket.statusAntrean().equals("Dibatalkan")) throw new PembatalanException("Antrean ini belum dibatalkan.");
                 model.addAttribute("berhasil", true);
-            } else if (!tiket.bolehBatal()) throw new PembatalanException("Tiket tidak memenuhi syarat pembatalan. Status harus diizinkan dan waktu tersisa lebih dari 60 menit sebelum praktik.");
+            } else if (!tiket.bolehBukaBatal()) throw new PembatalanException("Antrean tidak dapat dibatalkan dari status " + tiket.statusAntrean() + ".");
         } catch (IllegalArgumentException ex) { galat(response, model, 400, ex.getMessage()); }
         catch (NoSuchElementException ex) { galat(response, model, 404, ex.getMessage()); }
         catch (PembatalanException ex) { galat(response, model, 409, ex.getMessage()); }
