@@ -19,7 +19,8 @@ public final class StatusAntreanDto {
     }
     public record Detail(String idAntrean, int nomorAntrean, String statusAntrean, JadwalDto jadwal,
                          List<Integer> nomorSedangDilayani, Integer jumlahDiDepan, List<Baris> berikutnya,
-                         boolean statusAkhir, boolean bolehBatal, boolean bolehCheckIn, String keterangan) {
+                         boolean statusAkhir, boolean bolehBatal, boolean bolehCheckIn, String keterangan,
+                         boolean bolehBukaBatal) {
         public String nomorTampilan() { return nomor(nomorAntrean); }
         public String nomorSekarang() {
             return nomorSedangDilayani.isEmpty() ? "—" : nomorSedangDilayani.stream()

@@ -57,11 +57,13 @@ public class StatusAntreanService {
         var mulai = jadwal.getTanggal().atTime(jadwal.getJamMulai());
         var selesai = jadwal.getTanggal().atTime(jadwal.getJamSelesai());
         boolean batal = PembatalanPolicy.boleh(ticket.getStatusAntrean(), now, mulai);
+        // UC-04/AD-04: tombol dan pop-up tersedia menurut status; batas 60 menit diperiksa setelah konfirmasi (alur 4a).
+        boolean bukaBatal = PembatalanPolicy.statusDiizinkan(ticket.getStatusAntrean());
         boolean checkIn = CheckInPolicy.boleh(ticket.getStatusAntrean(), ticket.getWaktuCheckIn(), now,
                 jadwal.getTanggal(), jadwal.getJamMulai(), jadwal.getJamSelesai());
         return new Detail(ticket.getIdAntrean(), ticket.getNomorAntrean(), ticket.getStatusAntrean(),
                 JadwalDto.from(jadwal), sekarang, depan, berikut, akhir, batal, checkIn,
-                keterangan(ticket.getStatusAntrean()));
+                keterangan(ticket.getStatusAntrean()), bukaBatal);
     }
 
     private String keterangan(String status) {
